@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'signup_screen.dart';
+import 'dashboard_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -66,7 +67,14 @@ class _LoginScreenState extends State<LoginScreen> {
               height: 50,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.purple),
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const DashboardScreen(),
+                    ),
+                  );
+                },
                 child: const Text(
                   "Log in",
                   style: TextStyle(color: Colors.white),
