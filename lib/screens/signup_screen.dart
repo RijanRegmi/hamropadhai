@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
-import 'signup_screen.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+class SignupScreen extends StatefulWidget {
+  const SignupScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<SignupScreen> createState() => _SignupScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _SignupScreenState extends State<SignupScreen> {
   bool hidePassword = true;
+  bool hideConfirm = true;
 
   @override
   Widget build(BuildContext context) {
@@ -20,26 +20,36 @@ class _LoginScreenState extends State<LoginScreen> {
           children: [
             const SizedBox(height: 40),
 
+            // Logo Image
             Image.asset("assets/images/books.png", height: 120),
 
             const SizedBox(height: 10),
             const Text(
-              "LOGIN",
+              "SIGNUP",
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
-
             const SizedBox(height: 30),
 
             TextField(
               decoration: InputDecoration(
-                prefixIcon: const Icon(Icons.email_outlined),
-                labelText: "Email or Phone Number",
+                prefixIcon: const Icon(Icons.person_outline),
+                labelText: "Name",
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
             ),
+            const SizedBox(height: 15),
 
+            TextField(
+              decoration: InputDecoration(
+                prefixIcon: const Icon(Icons.email_outlined),
+                labelText: "Email",
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
             const SizedBox(height: 15),
 
             TextField(
@@ -58,6 +68,35 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
             ),
+            const SizedBox(height: 15),
+
+            TextField(
+              obscureText: hideConfirm,
+              decoration: InputDecoration(
+                prefixIcon: const Icon(Icons.lock_outline),
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    hideConfirm ? Icons.visibility_off : Icons.visibility,
+                  ),
+                  onPressed: () => setState(() => hideConfirm = !hideConfirm),
+                ),
+                labelText: "Confirm Password",
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
+            const SizedBox(height: 15),
+
+            TextField(
+              decoration: InputDecoration(
+                prefixIcon: const Icon(Icons.numbers),
+                labelText: "Code",
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
 
             const SizedBox(height: 20),
 
@@ -68,23 +107,19 @@ class _LoginScreenState extends State<LoginScreen> {
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.purple),
                 onPressed: () {},
                 child: const Text(
-                  "Log in",
+                  "Sign up",
                   style: TextStyle(color: Colors.white),
                 ),
               ),
             ),
 
             const SizedBox(height: 20),
-
-            const Text("Don't have account?"),
+            const Text("Already have account?"),
             TextButton(
               onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const SignupScreen()),
-                );
+                Navigator.pop(context);
               },
-              child: const Text("Create account"),
+              child: const Text("LOGIN"),
             ),
           ],
         ),
