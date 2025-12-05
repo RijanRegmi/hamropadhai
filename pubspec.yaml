@@ -95,4 +95,3 @@ flutter_native_splash:
   ios: true
   image: assets/images/books.png
   color: "#ffffff"
-  remove_alpha_ios: true
