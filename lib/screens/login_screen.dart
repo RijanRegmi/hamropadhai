@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'signup_screen.dart';
 import 'dashboard_screen.dart';
+import 'bottom_navigation_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -71,7 +72,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const DashboardScreen(),
+                      builder: (context) => const BottomNavigationScreen(),
                     ),
                   );
                 },

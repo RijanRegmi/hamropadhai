@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'login_screen.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -53,6 +54,19 @@ class _SignupScreenState extends State<SignupScreen> {
             const SizedBox(height: 15),
 
             TextField(
+              keyboardType: TextInputType.phone,
+              decoration: InputDecoration(
+                prefixIcon: const Icon(Icons.phone),
+                labelText: "Phone Number",
+                hintText: "98XXXXXXXX",
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
+            const SizedBox(height: 15),
+
+            TextField(
               obscureText: hidePassword,
               decoration: InputDecoration(
                 prefixIcon: const Icon(Icons.lock_outline),
@@ -88,16 +102,6 @@ class _SignupScreenState extends State<SignupScreen> {
             ),
             const SizedBox(height: 15),
 
-            TextField(
-              decoration: InputDecoration(
-                prefixIcon: const Icon(Icons.numbers),
-                labelText: "Code",
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-            ),
-
             const SizedBox(height: 20),
 
             SizedBox(
@@ -117,7 +121,10 @@ class _SignupScreenState extends State<SignupScreen> {
             const Text("Already have account?"),
             TextButton(
               onPressed: () {
-                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const LoginScreen()),
+                );
               },
               child: const Text("LOGIN"),
             ),

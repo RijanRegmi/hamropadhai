@@ -16,7 +16,7 @@ class OnboardingScreen1 extends StatelessWidget {
 
             const SizedBox(height: 20),
             const Text(
-              "Welcome to BookApp",
+              "Welcome to HamroPadhai",
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
