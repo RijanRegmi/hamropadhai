@@ -19,15 +19,7 @@ class DashboardScreen extends StatelessWidget {
                   Row(
                     children: [
                       Image.asset("assets/images/logo.png", height: 36),
-                      const SizedBox(width: 8),
-                      const Text(
-                        "HamroPadhai",
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.purple,
-                        ),
-                      ),
+                      const SizedBox(width: 9),
                     ],
                   ),
                   const Icon(Icons.notifications_none),
@@ -37,7 +29,6 @@ class DashboardScreen extends StatelessWidget {
 
             const SizedBox(height: 10),
 
-            // Menu list
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
