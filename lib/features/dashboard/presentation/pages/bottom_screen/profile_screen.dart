@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:hamropadhai/features/auth/presentation/pages/screens/login_screen.dart';
+import 'package:hamropadhai/features/auth/presentation/pages/login_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});

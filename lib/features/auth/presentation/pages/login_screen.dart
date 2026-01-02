@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'signup_screen.dart';
-import 'bottom_navigation_screen.dart';
+import '../../../dashboard/presentation/pages/bottom_navigation_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});

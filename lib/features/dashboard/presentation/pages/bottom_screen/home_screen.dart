@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:hamropadhai/features/auth/presentation/pages/screens/dashboard_screen.dart';
-
+import 'package:hamropadhai/features/dashboard/presentation/pages/dashboard_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});

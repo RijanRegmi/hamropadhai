@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hamropadhai/theme/theme_data.dart';
-import 'package:hamropadhai/features/auth/presentation/pages/screens/splash_screen.dart';
+import 'package:hamropadhai/features/splash/presentation/splash_screen.dart';
 
 class App extends StatelessWidget {
   const App({super.key});
