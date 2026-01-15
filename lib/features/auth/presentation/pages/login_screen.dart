@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:hive/hive.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'signup_screen.dart';
 import '../../../dashboard/presentation/pages/bottom_navigation_screen.dart';
+import '../view_model/auth_viewmodel.dart';
 
-class LoginScreen extends StatefulWidget {
+class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends ConsumerState<LoginScreen> {
   bool hidePassword = true;
 
   final emailController = TextEditingController();
@@ -18,6 +19,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final loading = ref.watch(authViewModelProvider);
+
     return Scaffold(
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
@@ -50,29 +53,35 @@ class _LoginScreenState extends State<LoginScreen> {
               height: 50,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.purple),
-                onPressed: () {
-                  final box = Hive.box('users');
-                  final user = box.get(emailController.text);
+                onPressed: loading
+                    ? null
+                    : () async {
+                        try {
+                          await ref
+                              .read(authViewModelProvider.notifier)
+                              .login(
+                                email: emailController.text.trim(),
+                                password: passwordController.text,
+                              );
 
-                  if (user == null ||
-                      user['password'] != passwordController.text) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("Invalid credentials")),
-                    );
-                    return;
-                  }
-
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const BottomNavigationScreen(),
-                    ),
-                  );
-                },
-                child: const Text(
-                  "Log in",
-                  style: TextStyle(color: Colors.white),
-                ),
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const BottomNavigationScreen(),
+                            ),
+                          );
+                        } catch (e) {
+                          ScaffoldMessenger.of(
+                            context,
+                          ).showSnackBar(SnackBar(content: Text(e.toString())));
+                        }
+                      },
+                child: loading
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text(
+                        "Log in",
+                        style: TextStyle(color: Colors.white),
+                      ),
               ),
             ),
 

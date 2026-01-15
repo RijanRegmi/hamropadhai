@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:hive/hive.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'login_screen.dart';
+import '../view_model/auth_viewmodel.dart';
 
-class SignupScreen extends StatefulWidget {
+class SignupScreen extends ConsumerStatefulWidget {
   const SignupScreen({super.key});
 
   @override
-  State<SignupScreen> createState() => _SignupScreenState();
+  ConsumerState<SignupScreen> createState() => _SignupScreenState();
 }
 
-class _SignupScreenState extends State<SignupScreen> {
+class _SignupScreenState extends ConsumerState<SignupScreen> {
   bool hidePassword = true;
   bool hideConfirm = true;
 
@@ -19,17 +20,19 @@ class _SignupScreenState extends State<SignupScreen> {
   final passwordController = TextEditingController();
   final confirmController = TextEditingController();
 
+  String gender = 'male';
+
   @override
   Widget build(BuildContext context) {
+    final loading = ref.watch(authViewModelProvider);
+
     return Scaffold(
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
         child: Column(
           children: [
             const SizedBox(height: 40),
-
             Image.asset("assets/images/books.png", height: 120),
-
             const SizedBox(height: 10),
             const Text(
               "SIGNUP",
@@ -116,6 +119,33 @@ class _SignupScreenState extends State<SignupScreen> {
               ),
             ),
 
+            const SizedBox(height: 15),
+
+            Row(
+              children: [
+                Expanded(
+                  child: RadioListTile<String>(
+                    title: const Text("Male"),
+                    value: "male",
+                    groupValue: gender,
+                    onChanged: (value) {
+                      setState(() => gender = value!);
+                    },
+                  ),
+                ),
+                Expanded(
+                  child: RadioListTile<String>(
+                    title: const Text("Female"),
+                    value: "female",
+                    groupValue: gender,
+                    onChanged: (value) {
+                      setState(() => gender = value!);
+                    },
+                  ),
+                ),
+              ],
+            ),
+
             const SizedBox(height: 20),
 
             SizedBox(
@@ -123,72 +153,60 @@ class _SignupScreenState extends State<SignupScreen> {
               height: 50,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.purple),
-                onPressed: () async {
-                  try {
-                    final name = nameController.text.trim();
-                    final email = emailController.text.trim();
-                    final phone = phoneController.text.trim();
-                    final password = passwordController.text;
-                    final confirm = confirmController.text;
+                onPressed: loading
+                    ? null
+                    : () async {
+                        if (passwordController.text != confirmController.text) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text("Passwords do not match"),
+                            ),
+                          );
+                          return;
+                        }
 
-                    if (name.isEmpty ||
-                        email.isEmpty ||
-                        phone.isEmpty ||
-                        password.isEmpty ||
-                        confirm.isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text("All fields are required"),
-                        ),
-                      );
-                      return;
-                    }
+                        try {
+                          await ref
+                              .read(authViewModelProvider.notifier)
+                              .signup(
+                                name: nameController.text.trim(),
+                                email: emailController.text.trim(),
+                                password: passwordController.text,
+                                gender: gender,
+                              );
 
-                    if (password != confirm) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Passwords do not match")),
-                      );
-                      return;
-                    }
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text("Signup successful")),
+                          );
 
-                    final box = Hive.box('users');
-
-                    await box.put(email, {
-                      'name': name,
-                      'email': email,
-                      'phone': phone,
-                      'password': password,
-                    });
-
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("Signup successful")),
-                    );
-
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (_) => const LoginScreen()),
-                    );
-                  } catch (e) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text("Signup failed: $e")),
-                    );
-                  }
-                },
-                child: const Text(
-                  "Sign up",
-                  style: TextStyle(color: Colors.white),
-                ),
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const LoginScreen(),
+                            ),
+                          );
+                        } catch (e) {
+                          ScaffoldMessenger.of(
+                            context,
+                          ).showSnackBar(SnackBar(content: Text(e.toString())));
+                        }
+                      },
+                child: loading
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text(
+                        "Sign up",
+                        style: TextStyle(color: Colors.white),
+                      ),
               ),
             ),
 
             const SizedBox(height: 20),
-
             const Text("Already have account?"),
             TextButton(
               onPressed: () {
-                Navigator.push(
+                Navigator.pushReplacement(
                   context,
-                  MaterialPageRoute(builder: (context) => const LoginScreen()),
+                  MaterialPageRoute(builder: (_) => const LoginScreen()),
                 );
               },
               child: const Text("LOGIN"),
