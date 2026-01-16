@@ -169,8 +169,9 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                           await ref
                               .read(authViewModelProvider.notifier)
                               .signup(
-                                name: nameController.text.trim(),
+                                fullName: nameController.text.trim(),
                                 email: emailController.text.trim(),
+                                phone: phoneController.text.trim(),
                                 password: passwordController.text,
                                 gender: gender,
                               );

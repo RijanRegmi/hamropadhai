@@ -4,16 +4,18 @@ class AuthLocalDatasource {
   static const String userBoxName = 'users';
 
   Future<void> signup({
-    required String name,
+    required String fullName,
     required String email,
+    required String phone,
     required String password,
     required String gender,
   }) async {
     final box = Hive.box(userBoxName);
 
     await box.put(email, {
-      "name": name,
+      "fullName": fullName,
       "email": email,
+      "phone": phone,
       "password": password,
       "gender": gender,
     });

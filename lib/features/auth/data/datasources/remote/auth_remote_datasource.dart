@@ -1,37 +1,53 @@
 import 'package:hamropadhai/core/api/api_client.dart';
 import 'package:hamropadhai/core/api/api_endpoints.dart';
 
-class AuthRemoteDataSource {
-  final ApiClient client;
-
-  AuthRemoteDataSource(this.client);
-
+abstract class AuthRemoteDataSource {
   Future<void> signup({
-    required String name,
+    required String fullName,
     required String email,
+    required String phone,
+    required String password,
+    required String gender,
+  });
+
+  Future<String> login({required String email, required String password});
+}
+
+class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
+  final ApiClient apiClient;
+
+  AuthRemoteDataSourceImpl(this.apiClient);
+
+  @override
+  Future<void> signup({
+    required String fullName,
+    required String email,
+    required String phone,
     required String password,
     required String gender,
   }) async {
-    await client.post(
+    await apiClient.post(
       ApiEndpoints.baseUrl + ApiEndpoints.signup,
       body: {
-        "name": name,
+        "fullName": fullName,
         "email": email,
+        "phone": phone,
         "password": password,
         "gender": gender,
       },
     );
   }
 
+  @override
   Future<String> login({
     required String email,
     required String password,
   }) async {
-    final data = await client.post(
+    final data = await apiClient.post(
       ApiEndpoints.baseUrl + ApiEndpoints.login,
       body: {"email": email, "password": password},
     );
 
-    return data['token'];
+    return data["token"];
   }
 }

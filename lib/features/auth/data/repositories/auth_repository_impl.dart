@@ -9,7 +9,7 @@ import '../datasources/remote/auth_remote_datasource.dart';
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
   return AuthRepository(
     networkInfo: ref.read(networkInfoProvider),
-    remote: AuthRemoteDataSource(ApiClient(http.Client())),
+    remote: AuthRemoteDataSourceImpl(ApiClient(http.Client())),
     local: AuthLocalDatasource(),
   );
 });
@@ -26,22 +26,25 @@ class AuthRepository {
   });
 
   Future<void> signup({
-    required String name,
+    required String fullName,
     required String email,
+    required String phone,
     required String password,
     required String gender,
   }) async {
     if (await networkInfo.isConnected) {
       await remote.signup(
-        name: name,
+        fullName: fullName,
         email: email,
+        phone: phone,
         password: password,
         gender: gender,
       );
     } else {
       await local.signup(
-        name: name,
+        fullName: fullName,
         email: email,
+        phone: phone,
         password: password,
         gender: gender,
       );
@@ -51,7 +54,6 @@ class AuthRepository {
   Future<void> login({required String email, required String password}) async {
     if (await networkInfo.isConnected) {
       final token = await remote.login(email: email, password: password);
-
       await local.saveToken(token);
     } else {
       final success = await local.login(email: email, password: password);
