@@ -27,6 +27,7 @@ class AuthRepository {
 
   Future<void> signup({
     required String fullName,
+    required String username,
     required String email,
     required String phone,
     required String password,
@@ -35,6 +36,7 @@ class AuthRepository {
     if (await networkInfo.isConnected) {
       await remote.signup(
         fullName: fullName,
+        username: username,
         email: email,
         phone: phone,
         password: password,
@@ -43,6 +45,7 @@ class AuthRepository {
     } else {
       await local.signup(
         fullName: fullName,
+        username: username,
         email: email,
         phone: phone,
         password: password,
@@ -51,16 +54,45 @@ class AuthRepository {
     }
   }
 
-  Future<void> login({required String email, required String password}) async {
+  Future<void> login({
+    required String username,
+    required String password,
+  }) async {
     if (await networkInfo.isConnected) {
-      final token = await remote.login(email: email, password: password);
+      final token = await remote.login(username: username, password: password);
       await local.saveToken(token);
     } else {
-      final success = await local.login(email: email, password: password);
+      final success = await local.login(username: username, password: password);
 
       if (!success) {
         throw Exception("Invalid credentials (offline)");
       }
+    }
+  }
+
+  Future<Map<String, dynamic>> getProfile() async {
+    final token = await local.getToken();
+    if (token == null) {
+      throw Exception("Not logged in");
+    }
+
+    if (await networkInfo.isConnected) {
+      return await remote.getProfile(token);
+    } else {
+      throw Exception("No internet connection");
+    }
+  }
+
+  Future<String> uploadProfileImage(String imagePath) async {
+    final token = await local.getToken();
+    if (token == null) {
+      throw Exception("Not logged in");
+    }
+
+    if (await networkInfo.isConnected) {
+      return await remote.uploadProfileImage(token, imagePath);
+    } else {
+      throw Exception("No internet connection");
     }
   }
 

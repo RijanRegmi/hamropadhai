@@ -5,6 +5,7 @@ class AuthLocalDatasource {
 
   Future<void> signup({
     required String fullName,
+    required String username,
     required String email,
     required String phone,
     required String password,
@@ -12,8 +13,9 @@ class AuthLocalDatasource {
   }) async {
     final box = Hive.box(userBoxName);
 
-    await box.put(email, {
+    await box.put(username, {
       "fullName": fullName,
+      "username": username,
       "email": email,
       "phone": phone,
       "password": password,
@@ -21,9 +23,12 @@ class AuthLocalDatasource {
     });
   }
 
-  Future<bool> login({required String email, required String password}) async {
+  Future<bool> login({
+    required String username,
+    required String password,
+  }) async {
     final box = Hive.box(userBoxName);
-    final user = box.get(email);
+    final user = box.get(username);
 
     if (user == null) return false;
 
@@ -34,6 +39,11 @@ class AuthLocalDatasource {
     final box = Hive.box(userBoxName);
     await box.put('token', token);
     await box.put('isLoggedIn', true);
+  }
+
+  Future<String?> getToken() async {
+    final box = Hive.box(userBoxName);
+    return box.get('token');
   }
 
   Future<void> logout() async {

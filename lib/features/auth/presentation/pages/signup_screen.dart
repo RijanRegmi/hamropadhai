@@ -15,12 +15,18 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   bool hideConfirm = true;
 
   final nameController = TextEditingController();
+  final usernameController = TextEditingController();
   final emailController = TextEditingController();
   final phoneController = TextEditingController();
   final passwordController = TextEditingController();
   final confirmController = TextEditingController();
 
   String gender = 'male';
+
+  // Error states for each field
+  String? usernameError;
+  String? emailError;
+  String? phoneError;
 
   @override
   Widget build(BuildContext context) {
@@ -54,10 +60,49 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
             const SizedBox(height: 15),
 
             TextField(
+              controller: usernameController,
+              onChanged: (value) {
+                // Clear error when user types
+                if (usernameError != null) {
+                  setState(() => usernameError = null);
+                }
+              },
+              decoration: InputDecoration(
+                prefixIcon: const Icon(Icons.account_circle_outlined),
+                labelText: "Username",
+                errorText: usernameError,
+                errorBorder: usernameError != null
+                    ? OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(color: Colors.red),
+                      )
+                    : null,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 15),
+
+            TextField(
               controller: emailController,
+              onChanged: (value) {
+                // Clear error when user types
+                if (emailError != null) {
+                  setState(() => emailError = null);
+                }
+              },
               decoration: InputDecoration(
                 prefixIcon: const Icon(Icons.email_outlined),
                 labelText: "Email",
+                errorText: emailError,
+                errorBorder: emailError != null
+                    ? OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(color: Colors.red),
+                      )
+                    : null,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
@@ -69,10 +114,23 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
             TextField(
               controller: phoneController,
               keyboardType: TextInputType.phone,
+              onChanged: (value) {
+                // Clear error when user types
+                if (phoneError != null) {
+                  setState(() => phoneError = null);
+                }
+              },
               decoration: InputDecoration(
                 prefixIcon: const Icon(Icons.phone),
                 labelText: "Phone Number",
                 hintText: "98XXXXXXXX",
+                errorText: phoneError,
+                errorBorder: phoneError != null
+                    ? OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(color: Colors.red),
+                      )
+                    : null,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
@@ -156,6 +214,13 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                 onPressed: loading
                     ? null
                     : () async {
+                        // Clear all errors
+                        setState(() {
+                          usernameError = null;
+                          emailError = null;
+                          phoneError = null;
+                        });
+
                         if (passwordController.text != confirmController.text) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
@@ -170,6 +235,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                               .read(authViewModelProvider.notifier)
                               .signup(
                                 fullName: nameController.text.trim(),
+                                username: usernameController.text.trim(),
                                 email: emailController.text.trim(),
                                 phone: phoneController.text.trim(),
                                 password: passwordController.text,
@@ -187,9 +253,33 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                             ),
                           );
                         } catch (e) {
-                          ScaffoldMessenger.of(
-                            context,
-                          ).showSnackBar(SnackBar(content: Text(e.toString())));
+                          String errorMessage = e.toString();
+
+                          // Set specific field errors
+                          if (errorMessage.contains(
+                            "Username already exists",
+                          )) {
+                            setState(() {
+                              usernameError = "Username already exists";
+                            });
+                          } else if (errorMessage.contains(
+                            "Email already exists",
+                          )) {
+                            setState(() {
+                              emailError = "Email already exists";
+                            });
+                          } else if (errorMessage.contains(
+                            "Phone number already exists",
+                          )) {
+                            setState(() {
+                              phoneError = "Phone number already exists";
+                            });
+                          } else {
+                            // Show general error in snackbar
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(errorMessage)),
+                            );
+                          }
                         }
                       },
                 child: loading

@@ -14,8 +14,15 @@ class LoginScreen extends ConsumerStatefulWidget {
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   bool hidePassword = true;
 
-  final emailController = TextEditingController();
+  final usernameController = TextEditingController();
   final passwordController = TextEditingController();
+
+  @override
+  void dispose() {
+    usernameController.dispose();
+    passwordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -36,8 +43,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             const SizedBox(height: 30),
 
             TextField(
-              controller: emailController,
-              decoration: _dec(Icons.email_outlined, "Email or Phone Number"),
+              controller: usernameController,
+              decoration: _dec(Icons.account_circle_outlined, "Username"),
             ),
             const SizedBox(height: 15),
 
@@ -56,31 +63,62 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 onPressed: loading
                     ? null
                     : () async {
+                        // Validate input
+                        if (usernameController.text.trim().isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Please enter username'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                          return;
+                        }
+
+                        if (passwordController.text.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Please enter password'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                          return;
+                        }
+
                         try {
                           await ref
                               .read(authViewModelProvider.notifier)
                               .login(
-                                email: emailController.text.trim(),
+                                username: usernameController.text.trim(),
                                 password: passwordController.text,
                               );
 
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const BottomNavigationScreen(),
-                            ),
-                          );
+                          if (mounted) {
+                            // Use pushAndRemoveUntil to prevent going back to login
+                            Navigator.pushAndRemoveUntil(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const BottomNavigationScreen(),
+                              ),
+                              (route) => false, // Remove all previous routes
+                            );
+                          }
                         } catch (e) {
-                          ScaffoldMessenger.of(
-                            context,
-                          ).showSnackBar(SnackBar(content: Text(e.toString())));
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Login failed: ${e.toString()}'),
+                                backgroundColor: Colors.red,
+                                duration: const Duration(seconds: 3),
+                              ),
+                            );
+                          }
                         }
                       },
                 child: loading
                     ? const CircularProgressIndicator(color: Colors.white)
                     : const Text(
                         "Log in",
-                        style: TextStyle(color: Colors.white),
+                        style: TextStyle(color: Colors.white, fontSize: 16),
                       ),
               ),
             ),

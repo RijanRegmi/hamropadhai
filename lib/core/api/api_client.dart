@@ -1,5 +1,8 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
+import 'dart:io';
+import 'package:mime/mime.dart';
 
 class ApiClient {
   final http.Client _client;
@@ -23,6 +26,92 @@ class ApiClient {
       return decoded;
     } else {
       throw Exception(decoded['message'] ?? "Something went wrong");
+    }
+  }
+
+  Future<Map<String, dynamic>> get(
+    String url, {
+    Map<String, String>? headers,
+  }) async {
+    final response = await _client.get(
+      Uri.parse(url),
+      headers: {"Content-Type": "application/json", ...?headers},
+    );
+
+    final decoded = jsonDecode(response.body);
+
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return decoded;
+    } else {
+      throw Exception(decoded['message'] ?? "Something went wrong");
+    }
+  }
+
+  Future<Map<String, dynamic>> uploadImage(
+    String url, {
+    required String imagePath,
+    required String fieldName,
+    Map<String, String>? headers,
+  }) async {
+    try {
+      print('Uploading image from path: $imagePath');
+
+      final request = http.MultipartRequest('POST', Uri.parse(url));
+
+      // Add headers
+      if (headers != null) {
+        request.headers.addAll(headers);
+      }
+
+      // Get the file
+      final file = File(imagePath);
+
+      // Check if file exists
+      if (!await file.exists()) {
+        throw Exception('File does not exist at path: $imagePath');
+      }
+
+      // Get file size
+      final fileSize = await file.length();
+      print('File size: $fileSize bytes');
+
+      // Detect MIME type from file extension
+      final mimeType = lookupMimeType(imagePath);
+      print('Detected MIME type: $mimeType');
+
+      // Create multipart file with explicit content type
+      final multipartFile = await http.MultipartFile.fromPath(
+        fieldName,
+        imagePath,
+        contentType: mimeType != null
+            ? MediaType.parse(mimeType)
+            : MediaType('image', 'jpeg'), // Default to jpeg if detection fails
+      );
+
+      print('Adding file to request: ${multipartFile.filename}');
+      print('Content-Type: ${multipartFile.contentType}');
+
+      request.files.add(multipartFile);
+
+      print('Sending request to: $url');
+      final streamedResponse = await request.send();
+
+      print('Response status code: ${streamedResponse.statusCode}');
+
+      final response = await http.Response.fromStream(streamedResponse);
+
+      print('Response body: ${response.body}');
+
+      final decoded = jsonDecode(response.body);
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        return decoded;
+      } else {
+        throw Exception(decoded['message'] ?? "Upload failed");
+      }
+    } catch (e) {
+      print('Error in uploadImage: $e');
+      rethrow;
     }
   }
 }

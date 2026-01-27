@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hamropadhai/theme/theme_data.dart';
-import 'package:hamropadhai/features/splash/presentation/splash_screen.dart';
+import 'package:hamropadhai/features/splash/presentation/pages/splash_screen.dart';
 
 class App extends StatelessWidget {
   const App({super.key});
@@ -9,7 +9,7 @@ class App extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Flutter Riverpod Starter',
+      title: 'HamroPadhai',
       theme: getApplicationTheme(),
       home: const SplashScreen(),
     );
