@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hamropadhai/features/auth/presentation/pages/login_screen.dart';
 
 class NoteScreen extends StatelessWidget {
   const NoteScreen({super.key});
@@ -6,7 +7,37 @@ class NoteScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox.expand(
-      child: Center(child: Text('Welcome to the Note screen')),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text(
+              'Welcome to the Note screen',
+              style: TextStyle(fontSize: 18),
+            ),
+
+            const SizedBox(height: 30),
+
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const LoginScreen(),
+                    ),
+                    (route) => false,
+                  );
+                },
+                child: const Text('Logout'),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

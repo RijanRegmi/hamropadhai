@@ -58,34 +58,28 @@ class ApiClient {
 
       final request = http.MultipartRequest('POST', Uri.parse(url));
 
-      // Add headers
       if (headers != null) {
         request.headers.addAll(headers);
       }
 
-      // Get the file
       final file = File(imagePath);
 
-      // Check if file exists
       if (!await file.exists()) {
         throw Exception('File does not exist at path: $imagePath');
       }
 
-      // Get file size
       final fileSize = await file.length();
       print('File size: $fileSize bytes');
 
-      // Detect MIME type from file extension
       final mimeType = lookupMimeType(imagePath);
       print('Detected MIME type: $mimeType');
 
-      // Create multipart file with explicit content type
       final multipartFile = await http.MultipartFile.fromPath(
         fieldName,
         imagePath,
         contentType: mimeType != null
             ? MediaType.parse(mimeType)
-            : MediaType('image', 'jpeg'), // Default to jpeg if detection fails
+            : MediaType('image', 'jpeg'),
       );
 
       print('Adding file to request: ${multipartFile.filename}');

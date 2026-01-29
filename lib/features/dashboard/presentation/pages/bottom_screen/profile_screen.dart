@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../onboarding/presentation/pages/onboarding_screen1.dart';
 import '../../../../auth/presentation/view_model/auth_viewmodel.dart';
+import './../../../../../core/api/api_endpoints.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -24,9 +25,102 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     });
   }
 
-  Future<void> _pickImage() async {
+  Future<void> _showImageSourceDialog() async {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Choose Image Source',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 24),
+                InkWell(
+                  onTap: () {
+                    Navigator.pop(context);
+                    _pickImage(ImageSource.camera);
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.blue.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(
+                            Icons.camera_alt,
+                            color: Colors.blue,
+                            size: 24,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        const Text(
+                          'Camera',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                InkWell(
+                  onTap: () {
+                    Navigator.pop(context);
+                    _pickImage(ImageSource.gallery);
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.green.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(
+                            Icons.photo_library,
+                            color: Colors.green,
+                            size: 24,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        const Text(
+                          'Gallery',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
     final XFile? pickedFile = await _picker.pickImage(
-      source: ImageSource.gallery,
+      source: source,
       maxWidth: 800,
       maxHeight: 800,
       imageQuality: 85,
@@ -79,8 +173,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: Padding(
-          padding: const EdgeInsets.all(5.0),
-          child: Image.asset("assets/images/books.png", height: 18),
+          padding: const EdgeInsets.all(8.0),
+          child: Image.asset("assets/images/books.png", height: 24),
         ),
         titleSpacing: 0,
         title: Image.asset(
@@ -101,8 +195,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         loading: () => const Center(
           child: CircularProgressIndicator(color: Colors.purple),
         ),
-        error: (error, stack) =>
-            _buildProfileContent({}), // Show empty profile on error
+        error: (error, stack) => _buildProfileContent({}),
       ),
     );
   }
@@ -113,29 +206,25 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final String username = profile['username'] ?? 'No username';
     final String? profileImage = profile['profileImage'];
 
-    // ADDED: Pull-to-refresh functionality
     return RefreshIndicator(
       onRefresh: () async {
         ref.invalidate(profileProvider);
         await ref.read(profileProvider.future);
       },
       child: SingleChildScrollView(
-        physics:
-            const AlwaysScrollableScrollPhysics(), // Needed for refresh indicator
+        physics: const AlwaysScrollableScrollPhysics(),
         child: Column(
           children: [
             const SizedBox(height: 20),
 
-            // Profile Picture
             GestureDetector(
               onTap: () {
-                // Show full screen image if profile image exists
                 if (profileImage != null) {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (context) => FullScreenImage(
-                        imageUrl: "http://192.168.1.5:5050$profileImage",
+                        imageUrl: "${ApiEndpoints.imageBaseUrl}$profileImage",
                       ),
                     ),
                   );
@@ -150,7 +239,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         ? FileImage(_imageFile!)
                         : (profileImage != null
                                   ? NetworkImage(
-                                      "http://192.168.1.5:5050$profileImage",
+                                      "${ApiEndpoints.imageBaseUrl}$profileImage",
                                     )
                                   : null)
                               as ImageProvider?,
@@ -166,7 +255,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     bottom: 0,
                     right: 0,
                     child: GestureDetector(
-                      onTap: _pickImage,
+                      onTap: _showImageSourceDialog,
                       child: Container(
                         padding: const EdgeInsets.all(8),
                         decoration: const BoxDecoration(
@@ -187,7 +276,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
             const SizedBox(height: 20),
 
-            // User Name
             Text(
               fullName,
               style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
@@ -195,14 +283,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
             const SizedBox(height: 20),
 
-            // User Details
             _buildInfoTile(Icons.email_outlined, email),
             _buildInfoTile(Icons.school_outlined, "HamroPadhai"),
             _buildInfoTile(Icons.badge_outlined, username),
 
             const SizedBox(height: 30),
 
-            // Menu Options
             _buildMenuTile(
               icon: Icons.person_outline,
               iconColor: Colors.blue,
@@ -241,7 +327,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
             const SizedBox(height: 20),
 
-            // Logout Button
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: SizedBox(
@@ -278,7 +363,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
                     if (shouldLogout == true && mounted) {
                       try {
-                        // Show loading
                         showDialog(
                           context: context,
                           barrierDismissible: false,
@@ -289,10 +373,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         await ref.read(authViewModelProvider.notifier).logout();
 
                         if (mounted) {
-                          // Close loading dialog
                           Navigator.pop(context);
-
-                          // Navigate to onboarding and clear all previous routes
                           Navigator.pushAndRemoveUntil(
                             context,
                             MaterialPageRoute(
@@ -303,9 +384,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         }
                       } catch (e) {
                         if (mounted) {
-                          // Close loading dialog
                           Navigator.pop(context);
-
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text('Logout failed: ${e.toString()}'),
@@ -387,7 +466,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 }
 
-// Full Screen Image Viewer
 class FullScreenImage extends StatelessWidget {
   final String imageUrl;
 
