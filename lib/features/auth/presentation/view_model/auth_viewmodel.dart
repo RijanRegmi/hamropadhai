@@ -12,10 +12,9 @@ final profileProvider = FutureProvider<Map<String, dynamic>>((ref) async {
 
 class AuthViewModel extends StateNotifier<bool> {
   final AuthRepository repository;
-  final Ref ref; // ADDED: Need ref to invalidate providers
+  final Ref ref;
 
-  AuthViewModel(this.repository, this.ref)
-    : super(false); // ADDED: ref parameter
+  AuthViewModel(this.repository, this.ref) : super(false);
 
   Future<void> signup({
     required String fullName,

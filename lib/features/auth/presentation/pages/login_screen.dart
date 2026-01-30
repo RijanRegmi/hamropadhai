@@ -3,6 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'signup_screen.dart';
 import '../../../dashboard/presentation/pages/bottom_navigation_screen.dart';
 import '../view_model/auth_viewmodel.dart';
+import '../widgets/auth_header.dart';
+import '../widgets/custom_text_field.dart';
+import '../widgets/custom_password_field.dart';
+import '../widgets/custom_button.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -12,8 +16,6 @@ class LoginScreen extends ConsumerStatefulWidget {
 }
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
-  bool hidePassword = true;
-
   final usernameController = TextEditingController();
   final passwordController = TextEditingController();
 
@@ -24,139 +26,145 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     super.dispose();
   }
 
+  void _showErrorSnackBar(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+        duration: const Duration(seconds: 4),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  void _showSuccessSnackBar(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.green,
+        duration: const Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  Future<void> _handleLogin() async {
+    // Validate input
+    if (usernameController.text.trim().isEmpty) {
+      _showErrorSnackBar('Please enter username');
+      return;
+    }
+
+    if (passwordController.text.isEmpty) {
+      _showErrorSnackBar('Please enter password');
+      return;
+    }
+
+    try {
+      await ref
+          .read(authViewModelProvider.notifier)
+          .login(
+            username: usernameController.text.trim(),
+            password: passwordController.text,
+          );
+
+      if (mounted) {
+        _showSuccessSnackBar('Login successful!');
+
+        if (mounted) {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (_) => const BottomNavigationScreen()),
+            (route) => false,
+          );
+        }
+      }
+    } catch (e) {
+      String errorMessage = e.toString();
+
+      if (errorMessage.startsWith('Exception: ')) {
+        errorMessage = errorMessage.substring(11);
+      }
+
+      if (errorMessage.contains('timeout') ||
+          errorMessage.contains('Timeout')) {
+        _showErrorSnackBar(
+          'Connection timeout! Please check:\n'
+          '• Is your server running?\n'
+          '• Is your network working?\n'
+          '• Try again',
+        );
+      } else if (errorMessage.contains('SocketException') ||
+          errorMessage.contains('Cannot connect')) {
+        _showErrorSnackBar(
+          '🔌 Cannot connect to server!\n'
+          '• Make sure backend is running\n'
+          '• Check server URL in ApiEndpoints',
+        );
+      } else if (errorMessage.contains('Invalid credentials')) {
+        _showErrorSnackBar('Invalid username or password');
+      } else if (errorMessage.contains('Token not found')) {
+        _showErrorSnackBar(
+          'Server response error\n'
+          'Please contact support',
+        );
+      } else {
+        _showErrorSnackBar('Login failed: $errorMessage');
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final loading = ref.watch(authViewModelProvider);
 
     return Scaffold(
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
-        child: Column(
-          children: [
-            const SizedBox(height: 40),
-            Image.asset("assets/images/books.png", height: 120),
-            const SizedBox(height: 10),
-            const Text(
-              "LOGIN",
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 30),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+          child: Column(
+            children: [
+              const AuthHeader(title: "LOGIN"),
 
-            TextField(
-              controller: usernameController,
-              decoration: _dec(Icons.account_circle_outlined, "Username"),
-            ),
-            const SizedBox(height: 15),
-
-            TextField(
-              controller: passwordController,
-              obscureText: hidePassword,
-              decoration: _passwordDec(),
-            ),
-            const SizedBox(height: 20),
-
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.purple),
-                onPressed: loading
-                    ? null
-                    : () async {
-                        // Validate input
-                        if (usernameController.text.trim().isEmpty) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Please enter username'),
-                              backgroundColor: Colors.red,
-                            ),
-                          );
-                          return;
-                        }
-
-                        if (passwordController.text.isEmpty) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Please enter password'),
-                              backgroundColor: Colors.red,
-                            ),
-                          );
-                          return;
-                        }
-
-                        try {
-                          await ref
-                              .read(authViewModelProvider.notifier)
-                              .login(
-                                username: usernameController.text.trim(),
-                                password: passwordController.text,
-                              );
-
-                          if (mounted) {
-                            // Use pushAndRemoveUntil to prevent going back to login
-                            Navigator.pushAndRemoveUntil(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const BottomNavigationScreen(),
-                              ),
-                              (route) => false, // Remove all previous routes
-                            );
-                          }
-                        } catch (e) {
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Login failed: ${e.toString()}'),
-                                backgroundColor: Colors.red,
-                                duration: const Duration(seconds: 3),
-                              ),
-                            );
-                          }
-                        }
-                      },
-                child: loading
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text(
-                        "Log in",
-                        style: TextStyle(color: Colors.white, fontSize: 16),
-                      ),
+              CustomTextField(
+                controller: usernameController,
+                labelText: "Username",
+                prefixIcon: Icons.account_circle_outlined,
               ),
-            ),
+              const SizedBox(height: 15),
 
-            const SizedBox(height: 20),
-            const Text("Don't have account?"),
-            TextButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const SignupScreen()),
-                );
-              },
-              child: const Text("Create account"),
-            ),
-          ],
+              CustomPasswordField(
+                controller: passwordController,
+                labelText: "Password",
+              ),
+              const SizedBox(height: 20),
+
+              CustomButton(
+                text: "Log in",
+                isLoading: loading,
+                onPressed: _handleLogin,
+              ),
+
+              const SizedBox(height: 20),
+              const Text("Don't have an account?"),
+              TextButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const SignupScreen()),
+                  );
+                },
+                child: const Text(
+                  "Create account",
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
-    );
-  }
-
-  InputDecoration _dec(IconData icon, String label) {
-    return InputDecoration(
-      prefixIcon: Icon(icon),
-      labelText: label,
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-    );
-  }
-
-  InputDecoration _passwordDec() {
-    return InputDecoration(
-      prefixIcon: const Icon(Icons.lock_outline),
-      labelText: "Password",
-      suffixIcon: IconButton(
-        icon: Icon(hidePassword ? Icons.visibility_off : Icons.visibility),
-        onPressed: () => setState(() => hidePassword = !hidePassword),
-      ),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
     );
   }
 }
