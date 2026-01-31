@@ -2,7 +2,7 @@ class ApiEndpoints {
   ApiEndpoints._();
 
   // static const String deviceIp = "192.168.1.5";
-  static const String deviceIp = "192.168.1.6";
+  static const String deviceIp = "192.168.1.5";
 
   // static const String baseUrl = "http://$deviceIp:5050/api/auth";
 

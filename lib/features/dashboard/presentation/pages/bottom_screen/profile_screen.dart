@@ -203,6 +203,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Widget _buildProfileContent(Map<String, dynamic> profile) {
     final String fullName = profile['fullName'] ?? 'Unknown';
     final String email = profile['email'] ?? 'No email';
+    final String phone = profile['phone'] ?? 'No phone';
     final String username = profile['username'] ?? 'No username';
     final String? profileImage = profile['profileImage'];
 
@@ -284,6 +285,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             const SizedBox(height: 20),
 
             _buildInfoTile(Icons.email_outlined, email),
+            _buildInfoTile(Icons.phone_outlined, phone),
             _buildInfoTile(Icons.school_outlined, "HamroPadhai"),
             _buildInfoTile(Icons.badge_outlined, username),
 
