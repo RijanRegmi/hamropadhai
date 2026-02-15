@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'bottom_screen/home_screen.dart';
-import 'bottom_screen/note_screen.dart';
+import 'bottom_screen/calendar_screen.dart';
 import 'bottom_screen/profile_screen.dart';
 
 class BottomNavigationScreen extends StatefulWidget {
@@ -15,7 +15,7 @@ class _BottomNavigationScreenState extends State<BottomNavigationScreen> {
 
   final List<Widget> _screens = const [
     HomeScreen(),
-    NoteScreen(),
+    CalendarScreen(),
     ProfileScreen(),
   ];
 
@@ -30,9 +30,11 @@ class _BottomNavigationScreenState extends State<BottomNavigationScreen> {
             _currentIndex = index;
           });
         },
-        selectedItemColor: Colors.purple,
+        selectedItemColor: const Color(0xFF7C3AED),
         unselectedItemColor: Colors.grey,
         type: BottomNavigationBarType.fixed,
+        backgroundColor: Colors.white,
+        elevation: 8,
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home_outlined),
@@ -40,9 +42,9 @@ class _BottomNavigationScreenState extends State<BottomNavigationScreen> {
             label: 'Home',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.edit_note_outlined),
-            activeIcon: Icon(Icons.edit_note),
-            label: 'Note',
+            icon: Icon(Icons.calendar_month_outlined),
+            activeIcon: Icon(Icons.calendar_month),
+            label: 'Calendar',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person_outline),
