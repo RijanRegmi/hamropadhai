@@ -37,6 +37,20 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     'December',
   ];
 
+  @override
+  void initState() {
+    super.initState();
+    // Auto-reload on every visit
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.invalidate(assignmentsProvider);
+    });
+  }
+
+  Future<void> _onRefresh() async {
+    ref.invalidate(assignmentsProvider);
+    await ref.read(assignmentsProvider.future);
+  }
+
   DateTime get _firstDayOfMonth =>
       DateTime(_focusedDay.year, _focusedDay.month, 1);
   int get _startWeekday => _firstDayOfMonth.weekday % 7;
@@ -106,246 +120,248 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         ],
       ),
       body: SafeArea(
-        child: assignmentsAsync.hasError
-            ? Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(
-                      Icons.error_outline,
-                      color: Colors.red,
-                      size: 48,
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      assignmentsAsync.error.toString(),
-                      style: TextStyle(color: Colors.grey[600], fontSize: 13),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 12),
-                    TextButton(
-                      onPressed: () => ref.refresh(assignmentsProvider),
-                      child: const Text('Retry'),
-                    ),
-                  ],
-                ),
-              )
-            : SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (assignmentsAsync.isLoading) ...[
-                      const LinearProgressIndicator(
-                        color: Color(0xFF7C3AED),
-                        backgroundColor: Color(0xFFEDE9FE),
-                      ),
-                      const SizedBox(height: 8),
-                    ],
-
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.06),
-                            blurRadius: 10,
-                            offset: const Offset(0, 2),
+        child: RefreshIndicator(
+          color: const Color(0xFF7C3AED),
+          onRefresh: _onRefresh,
+          child: assignmentsAsync.hasError
+              ? SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  child: SizedBox(
+                    height: MediaQuery.of(context).size.height * 0.7,
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(
+                            Icons.error_outline,
+                            color: Colors.red,
+                            size: 48,
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            assignmentsAsync.error.toString(),
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 13,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 12),
+                          TextButton(
+                            onPressed: _onRefresh,
+                            child: const Text('Retry'),
                           ),
                         ],
                       ),
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              IconButton(
-                                icon: const Icon(Icons.chevron_left),
-                                onPressed: _prevMonth,
-                                color: const Color(0xFF7C3AED),
-                              ),
-                              Text(
-                                '${_months[_focusedDay.month - 1]} ${_focusedDay.year}',
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF1A1A1A),
+                    ),
+                  ),
+                )
+              : SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (assignmentsAsync.isLoading) ...[
+                        const LinearProgressIndicator(
+                          color: Color(0xFF7C3AED),
+                          backgroundColor: Color(0xFFEDE9FE),
+                        ),
+                        const SizedBox(height: 8),
+                      ],
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.06),
+                              blurRadius: 10,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.chevron_left),
+                                  onPressed: _prevMonth,
+                                  color: const Color(0xFF7C3AED),
                                 ),
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.chevron_right),
-                                onPressed: _nextMonth,
-                                color: const Color(0xFF7C3AED),
-                              ),
-                            ],
-                          ),
-
-                          const SizedBox(height: 8),
-
-                          Row(
-                            children: _weekDays
-                                .map(
-                                  (d) => Expanded(
-                                    child: Center(
-                                      child: Text(
-                                        d,
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w600,
-                                          color: d == 'Sun' || d == 'Sat'
-                                              ? const Color(0xFF7C3AED)
-                                              : Colors.grey[500],
+                                Text(
+                                  '${_months[_focusedDay.month - 1]} ${_focusedDay.year}',
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF1A1A1A),
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.chevron_right),
+                                  onPressed: _nextMonth,
+                                  color: const Color(0xFF7C3AED),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: _weekDays
+                                  .map(
+                                    (d) => Expanded(
+                                      child: Center(
+                                        child: Text(
+                                          d,
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                            color: d == 'Sun' || d == 'Sat'
+                                                ? const Color(0xFF7C3AED)
+                                                : Colors.grey[500],
+                                          ),
                                         ),
                                       ),
                                     ),
+                                  )
+                                  .toList(),
+                            ),
+                            const SizedBox(height: 8),
+                            GridView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              gridDelegate:
+                                  const SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 7,
+                                    childAspectRatio: 0.85,
                                   ),
-                                )
-                                .toList(),
-                          ),
+                              itemCount: _startWeekday + _daysInMonth,
+                              itemBuilder: (context, index) {
+                                if (index < _startWeekday) {
+                                  return const SizedBox.shrink();
+                                }
+                                final day = index - _startWeekday + 1;
+                                final isToday = _isToday(day);
+                                final isSelected = _isSelected(day);
+                                final hasAssignment = assignmentsByDate
+                                    .containsKey(_dayKey(day));
 
-                          const SizedBox(height: 8),
-
-                          GridView.builder(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            gridDelegate:
-                                const SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 7,
-                                  childAspectRatio: 0.85,
-                                ),
-                            itemCount: _startWeekday + _daysInMonth,
-                            itemBuilder: (context, index) {
-                              if (index < _startWeekday) {
-                                return const SizedBox.shrink();
-                              }
-                              final day = index - _startWeekday + 1;
-                              final isToday = _isToday(day);
-                              final isSelected = _isSelected(day);
-                              final hasAssignment = assignmentsByDate
-                                  .containsKey(_dayKey(day));
-
-                              return GestureDetector(
-                                onTap: () {
-                                  setState(() {
+                                return GestureDetector(
+                                  onTap: () => setState(() {
                                     _selectedDay = DateTime(
                                       _focusedDay.year,
                                       _focusedDay.month,
                                       day,
                                     );
-                                  });
-                                },
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Container(
-                                      width: 34,
-                                      height: 34,
-                                      decoration: BoxDecoration(
-                                        color: isSelected
-                                            ? const Color(0xFF7C3AED)
-                                            : isToday
-                                            ? const Color(0xFFEDE9FE)
-                                            : Colors.transparent,
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: Center(
-                                        child: Text(
-                                          '$day',
-                                          style: TextStyle(
-                                            fontSize: 13,
-                                            fontWeight: isToday || isSelected
-                                                ? FontWeight.bold
-                                                : FontWeight.normal,
-                                            color: isSelected
-                                                ? Colors.white
-                                                : isToday
-                                                ? const Color(0xFF7C3AED)
-                                                : const Color(0xFF1A1A1A),
+                                  }),
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Container(
+                                        width: 34,
+                                        height: 34,
+                                        decoration: BoxDecoration(
+                                          color: isSelected
+                                              ? const Color(0xFF7C3AED)
+                                              : isToday
+                                              ? const Color(0xFFEDE9FE)
+                                              : Colors.transparent,
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: Center(
+                                          child: Text(
+                                            '$day',
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              fontWeight: isToday || isSelected
+                                                  ? FontWeight.bold
+                                                  : FontWeight.normal,
+                                              color: isSelected
+                                                  ? Colors.white
+                                                  : isToday
+                                                  ? const Color(0xFF7C3AED)
+                                                  : const Color(0xFF1A1A1A),
+                                            ),
                                           ),
                                         ),
                                       ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Container(
-                                      width: 5,
-                                      height: 5,
-                                      decoration: BoxDecoration(
-                                        color: hasAssignment
-                                            ? const Color(0xFF3B82F6)
-                                            : Colors.transparent,
-                                        shape: BoxShape.circle,
+                                      const SizedBox(height: 2),
+                                      Container(
+                                        width: 5,
+                                        height: 5,
+                                        decoration: BoxDecoration(
+                                          color: hasAssignment
+                                              ? const Color(0xFF3B82F6)
+                                              : Colors.transparent,
+                                          shape: BoxShape.circle,
+                                        ),
                                       ),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    if (_selectedDay != null) ...[
-                      Text(
-                        '${_months[_selectedDay!.month - 1]} ${_selectedDay!.day}, ${_selectedDay!.year}',
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF1A1A1A),
-                        ),
-                      ),
-
-                      const SizedBox(height: 12),
-
-                      if (selectedAssignments.isEmpty)
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(
-                              color: Colors.black.withOpacity(0.06),
+                                    ],
+                                  ),
+                                );
+                              },
                             ),
-                          ),
-                          child: Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(10),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFEDE9FE),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: const Icon(
-                                  Icons.check_circle_outline,
-                                  color: Color(0xFF7C3AED),
-                                  size: 20,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Text(
-                                'No assignments due this day',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                            ],
-                          ),
-                        )
-                      else
-                        ...selectedAssignments.map(
-                          (assignment) =>
-                              _AssignmentCard(assignment: assignment),
+                          ],
                         ),
+                      ),
+                      const SizedBox(height: 20),
+                      if (_selectedDay != null) ...[
+                        Text(
+                          '${_months[_selectedDay!.month - 1]} ${_selectedDay!.day}, ${_selectedDay!.year}',
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF1A1A1A),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        if (selectedAssignments.isEmpty)
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                color: Colors.black.withOpacity(0.06),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFEDE9FE),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: const Icon(
+                                    Icons.check_circle_outline,
+                                    color: Color(0xFF7C3AED),
+                                    size: 20,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Text(
+                                  'No assignments due this day',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        else
+                          ...selectedAssignments.map(
+                            (a) => _AssignmentCard(assignment: a),
+                          ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
-              ),
+        ),
       ),
     );
   }
@@ -353,7 +369,6 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
 class _AssignmentCard extends StatelessWidget {
   final Map<String, dynamic> assignment;
-
   const _AssignmentCard({required this.assignment});
 
   @override

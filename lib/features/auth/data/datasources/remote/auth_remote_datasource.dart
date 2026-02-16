@@ -16,6 +16,11 @@ abstract class AuthRemoteDataSource {
   Future<Map<String, dynamic>> getProfile(String token);
 
   Future<String> uploadProfileImage(String token, String imagePath);
+
+  Future<Map<String, dynamic>> updateProfile(
+    String token,
+    Map<String, dynamic> data,
+  );
 }
 
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
@@ -50,26 +55,18 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     required String username,
     required String password,
   }) async {
-    try {
-      final response = await apiClient.post(
-        ApiEndpoints.baseUrl + ApiEndpoints.login,
-        body: {"username": username, "password": password},
-      );
+    final response = await apiClient.post(
+      ApiEndpoints.baseUrl + ApiEndpoints.login,
+      body: {"username": username, "password": password},
+    );
 
-      print('Login response: $response'); // Debug log
-
-      // Check if response has the expected structure
-      if (response["success"] == true &&
-          response["data"] != null &&
-          response["data"]["token"] != null) {
-        return response["data"]["token"] as String;
-      }
-
-      throw Exception("Token not found in response");
-    } catch (e) {
-      print('Login error: $e');
-      rethrow;
+    if (response["success"] == true &&
+        response["data"] != null &&
+        response["data"]["token"] != null) {
+      return response["data"]["token"] as String;
     }
+
+    throw Exception("Token not found in response");
   }
 
   @override
@@ -97,5 +94,23 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     }
 
     throw Exception("Profile image URL not found in response");
+  }
+
+  @override
+  Future<Map<String, dynamic>> updateProfile(
+    String token,
+    Map<String, dynamic> data,
+  ) async {
+    final response = await apiClient.put(
+      ApiEndpoints.baseUrl + ApiEndpoints.updateProfile,
+      body: data,
+      headers: {"Authorization": "Bearer $token"},
+    );
+
+    if (response["success"] == true && response["data"] != null) {
+      return response["data"];
+    }
+
+    throw Exception(response["message"] ?? "Failed to update profile");
   }
 }

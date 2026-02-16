@@ -1,9 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/repositories/assignment_repository.dart';
+import 'auth_token_provider.dart';
 
 final assignmentsProvider = FutureProvider<List<Map<String, dynamic>>>((
   ref,
 ) async {
+  final token = await ref.watch(authTokenProvider.future);
+  if (token == null) throw Exception('Not logged in');
   final repository = ref.read(assignmentRepositoryProvider);
   return repository.getMyAssignments();
 });

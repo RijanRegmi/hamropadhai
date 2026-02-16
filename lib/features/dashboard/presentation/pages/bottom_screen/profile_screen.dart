@@ -4,7 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../onboarding/presentation/pages/onboarding_screen1.dart';
 import '../../../../auth/presentation/view_model/auth_viewmodel.dart';
-import './../../../../../core/api/api_endpoints.dart';
+import '../../../../../core/api/api_endpoints.dart';
+import '../edit_profile_screen.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -127,17 +128,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
 
     if (pickedFile != null) {
-      setState(() {
-        _imageFile = File(pickedFile.path);
-      });
+      setState(() => _imageFile = File(pickedFile.path));
 
       try {
         await ref
             .read(authViewModelProvider.notifier)
             .uploadProfileImage(pickedFile.path);
-
         ref.invalidate(profileProvider);
-
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -147,10 +144,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           );
         }
       } catch (e) {
-        setState(() {
-          _imageFile = null;
-        });
-
+        setState(() => _imageFile = null);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -297,8 +291,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               title: "Edit Details",
               subtitle: "Edit your information",
               onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Feature coming soon!")),
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => EditProfileScreen(profile: profile),
+                  ),
                 );
               },
             ),
@@ -371,9 +368,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           builder: (context) =>
                               const Center(child: CircularProgressIndicator()),
                         );
-
                         await ref.read(authViewModelProvider.notifier).logout();
-
                         if (mounted) {
                           Navigator.pop(context);
                           Navigator.pushAndRemoveUntil(

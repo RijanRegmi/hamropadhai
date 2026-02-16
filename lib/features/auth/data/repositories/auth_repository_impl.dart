@@ -63,19 +63,13 @@ class AuthRepository {
       await local.saveToken(token);
     } else {
       final success = await local.login(username: username, password: password);
-
-      if (!success) {
-        throw Exception("Invalid credentials (offline)");
-      }
+      if (!success) throw Exception("Invalid credentials (offline)");
     }
   }
 
   Future<Map<String, dynamic>> getProfile() async {
     final token = await local.getToken();
-    if (token == null) {
-      throw Exception("Not logged in");
-    }
-
+    if (token == null) throw Exception("Not logged in");
     if (await networkInfo.isConnected) {
       return await remote.getProfile(token);
     } else {
@@ -83,12 +77,19 @@ class AuthRepository {
     }
   }
 
+  Future<Map<String, dynamic>> updateProfile(Map<String, dynamic> data) async {
+    final token = await local.getToken();
+    if (token == null) throw Exception("Not logged in");
+    if (await networkInfo.isConnected) {
+      return await remote.updateProfile(token, data);
+    } else {
+      throw Exception("No internet connection");
+    }
+  }
+
   Future<String> uploadProfileImage(String imagePath) async {
     final token = await local.getToken();
-    if (token == null) {
-      throw Exception("Not logged in");
-    }
-
+    if (token == null) throw Exception("Not logged in");
     if (await networkInfo.isConnected) {
       return await remote.uploadProfileImage(token, imagePath);
     } else {

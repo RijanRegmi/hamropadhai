@@ -17,49 +17,62 @@ class ApiClient {
     Map<String, String>? headers,
   }) async {
     try {
-      print('POST Request to: $url');
-      print('Request body: ${jsonEncode(body)}');
-
       final response = await _client
           .post(
             Uri.parse(url),
             headers: {"Content-Type": "application/json", ...?headers},
             body: jsonEncode(body),
           )
-          .timeout(
-            ApiEndpoints.connectionTimeout,
-            onTimeout: () {
-              throw TimeoutException(
-                'Connection timeout. Please check your internet connection and try again.',
-              );
-            },
-          );
-
-      print('Response status: ${response.statusCode}');
-      print('Response body: ${response.body}');
+          .timeout(ApiEndpoints.connectionTimeout);
 
       final decoded = jsonDecode(response.body);
-
       if (response.statusCode >= 200 && response.statusCode < 300) {
         return decoded;
       } else {
         throw Exception(decoded['message'] ?? "Something went wrong");
       }
-    } on TimeoutException catch (e) {
-      print('Timeout error: $e');
+    } on TimeoutException {
       throw Exception(
         'Request timed out. Please check your internet connection.',
       );
-    } on SocketException catch (e) {
-      print('Socket error: $e');
-      throw Exception(
-        'Cannot connect to server. Please check if the server is running and your network connection.',
-      );
-    } on FormatException catch (e) {
-      print('Format error: $e');
+    } on SocketException {
+      throw Exception('Cannot connect to server.');
+    } on FormatException {
       throw Exception('Invalid response from server.');
     } catch (e) {
-      print('Error in post: $e');
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>> put(
+    String url, {
+    required Map<String, dynamic> body,
+    Map<String, String>? headers,
+  }) async {
+    try {
+      final response = await _client
+          .put(
+            Uri.parse(url),
+            headers: {"Content-Type": "application/json", ...?headers},
+            body: jsonEncode(body),
+          )
+          .timeout(ApiEndpoints.connectionTimeout);
+
+      final decoded = jsonDecode(response.body);
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        return decoded;
+      } else {
+        throw Exception(decoded['message'] ?? "Something went wrong");
+      }
+    } on TimeoutException {
+      throw Exception(
+        'Request timed out. Please check your internet connection.',
+      );
+    } on SocketException {
+      throw Exception('Cannot connect to server.');
+    } on FormatException {
+      throw Exception('Invalid response from server.');
+    } catch (e) {
       rethrow;
     }
   }
@@ -69,47 +82,28 @@ class ApiClient {
     Map<String, String>? headers,
   }) async {
     try {
-      print('GET Request to: $url');
-
       final response = await _client
           .get(
             Uri.parse(url),
             headers: {"Content-Type": "application/json", ...?headers},
           )
-          .timeout(
-            ApiEndpoints.connectionTimeout,
-            onTimeout: () {
-              throw TimeoutException(
-                'Connection timeout. Please check your internet connection and try again.',
-              );
-            },
-          );
-
-      print('Response status: ${response.statusCode}');
-      print('Response body: ${response.body}');
+          .timeout(ApiEndpoints.connectionTimeout);
 
       final decoded = jsonDecode(response.body);
-
       if (response.statusCode >= 200 && response.statusCode < 300) {
         return decoded;
       } else {
         throw Exception(decoded['message'] ?? "Something went wrong");
       }
-    } on TimeoutException catch (e) {
-      print('Timeout error: $e');
+    } on TimeoutException {
       throw Exception(
         'Request timed out. Please check your internet connection.',
       );
-    } on SocketException catch (e) {
-      print('Socket error: $e');
-      throw Exception(
-        'Cannot connect to server. Please check if the server is running and your network connection.',
-      );
-    } on FormatException catch (e) {
-      print('Format error: $e');
+    } on SocketException {
+      throw Exception('Cannot connect to server.');
+    } on FormatException {
       throw Exception('Invalid response from server.');
     } catch (e) {
-      print('Error in get: $e');
       rethrow;
     }
   }
@@ -121,8 +115,6 @@ class ApiClient {
     Map<String, String>? headers,
   }) async {
     try {
-      print('Uploading image from path: $imagePath');
-
       final request = http.MultipartRequest('POST', Uri.parse(url));
 
       if (headers != null) {
@@ -130,17 +122,11 @@ class ApiClient {
       }
 
       final file = File(imagePath);
-
       if (!await file.exists()) {
         throw Exception('File does not exist at path: $imagePath');
       }
 
-      final fileSize = await file.length();
-      print('File size: $fileSize bytes');
-
       final mimeType = lookupMimeType(imagePath);
-      print('Detected MIME type: $mimeType');
-
       final multipartFile = await http.MultipartFile.fromPath(
         fieldName,
         imagePath,
@@ -149,26 +135,14 @@ class ApiClient {
             : MediaType('image', 'jpeg'),
       );
 
-      print('Adding file to request: ${multipartFile.filename}');
-      print('Content-Type: ${multipartFile.contentType}');
-
       request.files.add(multipartFile);
 
-      print('Sending request to: $url');
-
       final streamedResponse = await request.send().timeout(
-        Duration(seconds: 30),
-        onTimeout: () {
-          throw TimeoutException('Image upload timed out.');
-        },
+        const Duration(seconds: 30),
+        onTimeout: () => throw TimeoutException('Image upload timed out.'),
       );
 
-      print('Response status code: ${streamedResponse.statusCode}');
-
       final response = await http.Response.fromStream(streamedResponse);
-
-      print('Response body: ${response.body}');
-
       final decoded = jsonDecode(response.body);
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
@@ -176,14 +150,11 @@ class ApiClient {
       } else {
         throw Exception(decoded['message'] ?? "Upload failed");
       }
-    } on TimeoutException catch (e) {
-      print('Timeout error: $e');
+    } on TimeoutException {
       throw Exception('Upload timed out. Please try again.');
-    } on SocketException catch (e) {
-      print('Socket error: $e');
+    } on SocketException {
       throw Exception('Cannot connect to server. Please check your network.');
     } catch (e) {
-      print('Error in uploadImage: $e');
       rethrow;
     }
   }

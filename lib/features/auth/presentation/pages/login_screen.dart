@@ -51,7 +51,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Future<void> _handleLogin() async {
-    // Validate input
     if (usernameController.text.trim().isEmpty) {
       _showErrorSnackBar('Please enter username');
       return;
@@ -71,15 +70,22 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           );
 
       if (mounted) {
+        // Invalidate all cached providers so new account data loads fresh
+        ref.invalidate(profileProvider);
+
         _showSuccessSnackBar('Login successful!');
 
-        if (mounted) {
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(builder: (_) => const BottomNavigationScreen()),
-            (route) => false,
-          );
-        }
+        // Use username as key so BottomNavigationScreen fully rebuilds
+        // when switching accounts
+        final username = usernameController.text.trim();
+
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(
+            builder: (_) => BottomNavigationScreen(key: ValueKey(username)),
+          ),
+          (route) => false,
+        );
       }
     } catch (e) {
       String errorMessage = e.toString();
@@ -106,10 +112,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       } else if (errorMessage.contains('Invalid credentials')) {
         _showErrorSnackBar('Invalid username or password');
       } else if (errorMessage.contains('Token not found')) {
-        _showErrorSnackBar(
-          'Server response error\n'
-          'Please contact support',
-        );
+        _showErrorSnackBar('Server response error\nPlease contact support');
       } else {
         _showErrorSnackBar('Login failed: $errorMessage');
       }
