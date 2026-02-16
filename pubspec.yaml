@@ -42,6 +42,9 @@ dependencies:
   mime: ^1.0.4
   test_cov_console: ^0.2.2
   mocktail: ^1.0.3
+  file_picker: ^8.1.2
+  url_launcher: ^6.2.5
+  open_filex: ^4.3.4
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.

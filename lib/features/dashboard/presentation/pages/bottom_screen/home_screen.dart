@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hamropadhai/features/auth/presentation/view_model/auth_viewmodel.dart';
 import 'package:hamropadhai/core/api/api_endpoints.dart';
 import 'package:hamropadhai/features/dashboard/presentation/pages/routine_screen.dart';
+import 'package:hamropadhai/features/dashboard/presentation/pages/assignment_screen.dart';
+import 'package:hamropadhai/features/dashboard/presentation/pages/assignment_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -108,9 +110,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       subtitle: 'Your tasks',
                       bgColor: const Color(0xFFDBEAFE),
                       iconColor: const Color(0xFF3B82F6),
-                      onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Assignments coming soon!'),
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const AssignmentScreen(),
                         ),
                       ),
                     ),
