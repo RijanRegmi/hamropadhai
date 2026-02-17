@@ -4,7 +4,10 @@ import 'package:hamropadhai/features/auth/presentation/view_model/auth_viewmodel
 import 'package:hamropadhai/core/api/api_endpoints.dart';
 import 'package:hamropadhai/features/dashboard/presentation/pages/routine_screen.dart';
 import 'package:hamropadhai/features/dashboard/presentation/pages/assignment_screen.dart';
-import 'package:hamropadhai/features/dashboard/presentation/pages/assignment_screen.dart';
+import 'package:hamropadhai/features/dashboard/presentation/pages/notice_screen.dart';
+import 'package:hamropadhai/features/dashboard/presentation/pages/notification_screen.dart';
+import 'package:hamropadhai/features/dashboard/presentation/services/fcm_notification_service.dart';
+import 'package:hamropadhai/features/auth/presentation/providers/auth_token_provider.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -17,19 +20,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       ref.invalidate(profileProvider);
+      final token = await ref.read(authTokenProvider.future);
+      if (token != null) {
+        // ✅ CHANGED: Use FCM service instead of polling
+        await NotificationService.instance.startService(token);
+      }
     });
   }
 
   Future<void> _onRefresh() async {
     ref.invalidate(profileProvider);
+    ref.invalidate(notifUnreadCountProvider);
     await ref.read(profileProvider.future);
   }
 
   @override
   Widget build(BuildContext context) {
     final profileAsync = ref.watch(profileProvider);
+    final unreadAsync = ref.watch(notifUnreadCountProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
@@ -49,12 +59,54 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         centerTitle: false,
         actions: [
           IconButton(
-            icon: const Icon(Icons.notifications_outlined, color: Colors.black),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Notifications coming soon!')),
-              );
-            },
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const NotificationScreen()),
+            ),
+            icon: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                const Icon(
+                  Icons.notifications_outlined,
+                  color: Color(0xFF1A1A1A),
+                ),
+                unreadAsync.maybeWhen(
+                  data: (count) => count > 0
+                      ? Positioned(
+                          top: -4,
+                          right: -4,
+                          child: Container(
+                            padding: const EdgeInsets.all(1),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFEF4444),
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: Colors.white,
+                                width: 1.5,
+                              ),
+                            ),
+                            constraints: const BoxConstraints(
+                              minWidth: 16,
+                              minHeight: 16,
+                            ),
+                            child: Center(
+                              child: Text(
+                                count > 9 ? '9+' : '$count',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.bold,
+                                  height: 1,
+                                ),
+                              ),
+                            ),
+                          ),
+                        )
+                      : const SizedBox.shrink(),
+                  orElse: () => const SizedBox.shrink(),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -133,8 +185,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       subtitle: 'School notices',
                       bgColor: const Color(0xFFFFEDD5),
                       iconColor: const Color(0xFFF97316),
-                      onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Notices coming soon!')),
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const NoticeScreen()),
                       ),
                     ),
                   ],

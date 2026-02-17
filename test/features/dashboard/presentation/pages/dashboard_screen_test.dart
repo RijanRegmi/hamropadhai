@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:hamropadhai/features/dashboard/presentation/pages/dashboard_screen.dart';
+import 'package:hamropadhai/features/dashboard/presentation/pages/bottom_screen/home_screen.dart';
 
 void main() {
   testWidgets('DashboardScreen renders tiles and handles tap', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(const MaterialApp(home: DashboardScreen()));
+    await tester.pumpWidget(const MaterialApp(home: HomeScreen()));
 
     expect(find.text('Routine'), findsOneWidget);
     expect(find.text('Assignment'), findsOneWidget);

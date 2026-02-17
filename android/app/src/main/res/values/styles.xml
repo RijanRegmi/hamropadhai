@@ -6,5 +6,6 @@
         <item name="android:windowSplashScreenAnimatedIcon">@null</item>
         <item name="android:windowSplashScreenAnimationDuration">0</item>
         <item name="android:windowSplashScreenAnimatedIcon">@drawable/logo</item>
+        <!-- <color name="notification_color">#7C3AED</color> -->
     </style>
 </resources>

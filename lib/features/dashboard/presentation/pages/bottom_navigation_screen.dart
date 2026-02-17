@@ -18,7 +18,6 @@ class _BottomNavigationScreenState
     extends ConsumerState<BottomNavigationScreen> {
   int _currentIndex = 0;
 
-  // NO const here — screens must rebuild on every switch
   final List<Widget> _screens = [
     HomeScreen(),
     CalendarScreen(),
