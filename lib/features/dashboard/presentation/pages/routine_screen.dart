@@ -19,7 +19,6 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
     'Friday',
     'Saturday',
   ];
-
   String _selectedDay = '';
   late final String _today;
   late final String _tomorrow;
@@ -36,20 +35,23 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
   @override
   Widget build(BuildContext context) {
     final routineAsync = ref.watch(routineProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bg = isDark ? const Color(0xFF0F0F0F) : const Color(0xFFF5F5F5);
+    final headerBg = isDark ? const Color(0xFF1A1A1A) : Colors.white;
+    final textPrimary = isDark ? Colors.white : const Color(0xFF1A1A1A);
+    final textSecondary = isDark ? Colors.grey[400]! : Colors.grey[500]!;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundColor: bg,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: Icon(Icons.arrow_back, color: textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Class Routine',
           style: TextStyle(
-            color: Color(0xFF1A1A1A),
+            color: textPrimary,
             fontSize: 18,
             fontWeight: FontWeight.bold,
           ),
@@ -71,7 +73,7 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
                   const SizedBox(height: 12),
                   Text(
                     error.toString().replaceFirst('Exception: ', ''),
-                    style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                    style: TextStyle(color: textSecondary, fontSize: 13),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 12),
@@ -89,10 +91,8 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
           final classId = routine['classId'] ?? '';
           final sectionId = routine['sectionId'] ?? '';
           final academicYear = routine['academicYear'] ?? '';
-
           final availableDays = entries.map((e) => e['day'] as String).toList();
 
-          // Find entry for selected day — returns null if no data for that day
           Map<String, dynamic>? selectedEntry;
           try {
             selectedEntry =
@@ -111,7 +111,7 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  color: Colors.white,
+                  color: headerBg,
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -141,7 +141,7 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
                             academicYear,
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.grey[500],
+                              color: textSecondary,
                             ),
                           ),
                         ],
@@ -162,22 +162,35 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
 
                             Color bgColor;
                             Color textColor;
-
                             if (isSelected) {
                               bgColor = const Color(0xFF7C3AED);
                               textColor = Colors.white;
                             } else if (isToday && hasData) {
-                              bgColor = const Color(0xFFD1FAE5); // light green
-                              textColor = const Color(0xFF065F46);
+                              bgColor = isDark
+                                  ? const Color(0xFF064E3B)
+                                  : const Color(0xFFD1FAE5);
+                              textColor = isDark
+                                  ? const Color(0xFF6EE7B7)
+                                  : const Color(0xFF065F46);
                             } else if (isTomorrow && hasData) {
-                              bgColor = const Color(0xFFFEF9C3); // light yellow
-                              textColor = const Color(0xFF854D0E);
+                              bgColor = isDark
+                                  ? const Color(0xFF78350F)
+                                  : const Color(0xFFFEF9C3);
+                              textColor = isDark
+                                  ? const Color(0xFFFCD34D)
+                                  : const Color(0xFF854D0E);
                             } else if (hasData) {
-                              bgColor = const Color(0xFFEDE9FE);
+                              bgColor = isDark
+                                  ? const Color(0xFF2D1B69)
+                                  : const Color(0xFFEDE9FE);
                               textColor = const Color(0xFF7C3AED);
                             } else {
-                              bgColor = Colors.grey[100]!;
-                              textColor = Colors.grey[400]!;
+                              bgColor = isDark
+                                  ? const Color(0xFF1E1E1E)
+                                  : Colors.grey[100]!;
+                              textColor = isDark
+                                  ? Colors.grey[600]!
+                                  : Colors.grey[400]!;
                             }
 
                             return GestureDetector(
@@ -208,7 +221,6 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
                     ],
                   ),
                 ),
-
                 Expanded(
                   child: periods.isEmpty
                       ? RefreshIndicator(
@@ -224,8 +236,10 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
                                   children: [
                                     Container(
                                       padding: const EdgeInsets.all(20),
-                                      decoration: const BoxDecoration(
-                                        color: Color(0xFFEDE9FE),
+                                      decoration: BoxDecoration(
+                                        color: isDark
+                                            ? const Color(0xFF2D1B69)
+                                            : const Color(0xFFEDE9FE),
                                         shape: BoxShape.circle,
                                       ),
                                       child: const Icon(
@@ -235,12 +249,12 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
                                       ),
                                     ),
                                     const SizedBox(height: 16),
-                                    const Text(
+                                    Text(
                                       'No classes scheduled',
                                       style: TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.bold,
-                                        color: Color(0xFF1A1A1A),
+                                        color: textPrimary,
                                       ),
                                     ),
                                     const SizedBox(height: 6),
@@ -248,7 +262,7 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
                                       'Enjoy your free day!',
                                       style: TextStyle(
                                         fontSize: 13,
-                                        color: Colors.grey[500],
+                                        color: textSecondary,
                                       ),
                                     ),
                                   ],
@@ -286,9 +300,7 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
 
 class _PeriodCard extends StatelessWidget {
   final Map<String, dynamic> period;
-  final bool isFirst;
-  final bool isLast;
-
+  final bool isFirst, isLast;
   const _PeriodCard({
     required this.period,
     required this.isFirst,
@@ -309,27 +321,17 @@ class _PeriodCard extends StatelessWidget {
     return colors[subject.hashCode.abs() % colors.length];
   }
 
-  bool _isCurrentPeriod(String startTime, String endTime) {
-    try {
-      final now = TimeOfDay.now();
-      final start = _parseTime(startTime);
-      final end = _parseTime(endTime);
-      final nowMins = now.hour * 60 + now.minute;
-      final startMins = start.hour * 60 + start.minute;
-      final endMins = end.hour * 60 + end.minute;
-      return nowMins >= startMins && nowMins < endMins;
-    } catch (_) {
-      return false;
-    }
-  }
-
-  TimeOfDay _parseTime(String time) {
-    final parts = time.split(':');
-    return TimeOfDay(hour: int.parse(parts[0]), minute: int.parse(parts[1]));
-  }
-
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
+    final borderColor = isDark
+        ? const Color(0xFF2E2E2E)
+        : Colors.black.withOpacity(0.06);
+    final textPrimary = isDark ? Colors.white : const Color(0xFF1A1A1A);
+    final textSecondary = isDark ? Colors.grey[400]! : Colors.grey[500]!;
+    final divColor = isDark ? const Color(0xFF2E2E2E) : Colors.grey[100]!;
+
     final periodNumber = period['periodNumber']?.toString() ?? '';
     final subject = period['subject'] as String? ?? 'Unknown';
     final teacherName = period['teacherName'] as String? ?? '';
@@ -341,16 +343,18 @@ class _PeriodCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.black.withOpacity(0.06)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        border: Border.all(color: borderColor),
+        boxShadow: isDark
+            ? []
+            : [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.04),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
       ),
       child: IntrinsicHeight(
         child: Row(
@@ -374,21 +378,24 @@ class _PeriodCard extends StatelessWidget {
                     '$startTime – $endTime',
                     style: TextStyle(
                       fontSize: 11,
-                      color: Colors.grey[500],
+                      color: textSecondary,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     'Period $periodNumber',
-                    style: TextStyle(fontSize: 11, color: Colors.grey[400]),
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: isDark ? Colors.grey[600] : Colors.grey[400],
+                    ),
                   ),
                 ],
               ),
             ),
             Container(
               width: 1,
-              color: Colors.grey[100],
+              color: divColor,
               margin: const EdgeInsets.symmetric(vertical: 10),
             ),
             Expanded(
@@ -397,19 +404,13 @@ class _PeriodCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            subject,
-                            style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF1A1A1A),
-                            ),
-                          ),
-                        ),
-                      ],
+                    Text(
+                      subject,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        color: textPrimary,
+                      ),
                     ),
                     const SizedBox(height: 6),
                     if (teacherName.isNotEmpty)
@@ -418,14 +419,14 @@ class _PeriodCard extends StatelessWidget {
                           Icon(
                             Icons.person_outline,
                             size: 14,
-                            color: Colors.grey[400],
+                            color: isDark ? Colors.grey[600] : Colors.grey[400],
                           ),
                           const SizedBox(width: 4),
                           Text(
                             teacherName,
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.grey[600],
+                              color: textSecondary,
                             ),
                           ),
                         ],
@@ -437,14 +438,14 @@ class _PeriodCard extends StatelessWidget {
                           Icon(
                             Icons.room_outlined,
                             size: 14,
-                            color: Colors.grey[400],
+                            color: isDark ? Colors.grey[600] : Colors.grey[400],
                           ),
                           const SizedBox(width: 4),
                           Text(
                             'Room $roomNumber',
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.grey[600],
+                              color: textSecondary,
                             ),
                           ),
                         ],

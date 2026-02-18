@@ -31,15 +31,17 @@ class _BottomNavigationScreenState
       data: (p) => p['profileImage'] as String?,
       orElse: () => null,
     );
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final navBg = isDark ? const Color(0xFF1A1A1A) : Colors.white;
 
     return Scaffold(
       body: IndexedStack(index: _currentIndex, children: _screens),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: navBg,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.08),
+              color: Colors.black.withOpacity(isDark ? 0.3 : 0.08),
               blurRadius: 12,
               offset: const Offset(0, -2),
             ),
@@ -80,12 +82,9 @@ class _BottomNavigationScreenState
 }
 
 class _NavItem extends StatelessWidget {
-  final IconData icon;
-  final IconData activeIcon;
-  final int index;
-  final int currentIndex;
+  final IconData icon, activeIcon;
+  final int index, currentIndex;
   final VoidCallback onTap;
-
   const _NavItem({
     required this.icon,
     required this.activeIcon,
@@ -97,6 +96,7 @@ class _NavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isSelected = index == currentIndex;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Expanded(
       child: GestureDetector(
         onTap: onTap,
@@ -104,7 +104,9 @@ class _NavItem extends StatelessWidget {
         child: Center(
           child: Icon(
             isSelected ? activeIcon : icon,
-            color: isSelected ? const Color(0xFF7C3AED) : Colors.grey,
+            color: isSelected
+                ? const Color(0xFF7C3AED)
+                : (isDark ? Colors.grey[600] : Colors.grey),
             size: 26,
           ),
         ),
@@ -114,11 +116,9 @@ class _NavItem extends StatelessWidget {
 }
 
 class _ProfileNavItem extends StatelessWidget {
-  final int index;
-  final int currentIndex;
+  final int index, currentIndex;
   final String? profileImage;
   final VoidCallback onTap;
-
   const _ProfileNavItem({
     required this.index,
     required this.currentIndex,
@@ -129,6 +129,7 @@ class _ProfileNavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isSelected = index == currentIndex;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Expanded(
       child: GestureDetector(
         onTap: onTap,
@@ -156,13 +157,15 @@ class _ProfileNavItem extends StatelessWidget {
                         size: 18,
                         color: isSelected
                             ? const Color(0xFF7C3AED)
-                            : Colors.grey,
+                            : (isDark ? Colors.grey[600] : Colors.grey),
                       ),
                     )
                   : Icon(
                       Icons.person,
                       size: 18,
-                      color: isSelected ? const Color(0xFF7C3AED) : Colors.grey,
+                      color: isSelected
+                          ? const Color(0xFF7C3AED)
+                          : (isDark ? Colors.grey[600] : Colors.grey),
                     ),
             ),
           ),

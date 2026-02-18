@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "446979582570",
-    "project_id": "hamropadhai-b8f06",
-    "storage_bucket": "hamropadhai-b8f06.firebasestorage.app"
+    "project_number": "7531662238",
+    "project_id": "hamropadhai-2e695",
+    "storage_bucket": "hamropadhai-2e695.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:446979582570:android:ace2758df72497cffff813",
+        "mobilesdk_app_id": "1:7531662238:android:dceb152a317ba41a64a48f",
         "android_client_info": {
           "package_name": "com.hamropadhai.hamropadhai"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyCLx68W_ETx9VyO8JT2wq4BJHciOy1vknA"
+          "current_key": "AIzaSyDBS7CTe7dF_8llCebNvqWFS6n-dzt4w5M"
         }
       ],
       "services": {

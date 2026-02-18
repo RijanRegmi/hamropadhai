@@ -3,8 +3,11 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
-// ✅ Import ONLY — no export directive here
 import 'package:hamropadhai/features/auth/presentation/providers/auth_token_provider.dart';
+
+import 'package:hamropadhai/features/dashboard/presentation/pages/assignment_screen.dart';
+import 'package:hamropadhai/features/dashboard/presentation/pages/notice_screen.dart';
+import 'package:hamropadhai/features/dashboard/presentation/pages/routine_screen.dart';
 
 const _base = 'http://10.0.2.2:5050';
 
@@ -24,8 +27,6 @@ final notificationsProvider =
       return List<Map<String, dynamic>>.from(body['data'] ?? []);
     });
 
-// ✅ FIX: Use StreamProvider so the badge count refreshes automatically every
-// 15 seconds — no manual reload needed on the home screen.
 final notifUnreadCountProvider = StreamProvider<int>((ref) async* {
   Future<int> fetch() async {
     try {
@@ -44,10 +45,8 @@ final notifUnreadCountProvider = StreamProvider<int>((ref) async* {
     }
   }
 
-  // Emit immediately on first load
   yield await fetch();
 
-  // Then emit every 15 seconds automatically
   await for (final _ in Stream.periodic(const Duration(seconds: 15))) {
     yield await fetch();
   }
@@ -115,6 +114,34 @@ _Meta _metaFor(String type) {
   }
 }
 
+void _navigateByType(BuildContext context, String type) {
+  switch (type) {
+    case 'assignment_created':
+    case 'assignment_updated':
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const AssignmentScreen()),
+      );
+      break;
+    case 'notice_created':
+    case 'notice_updated':
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const NoticeScreen()),
+      );
+      break;
+    case 'routine_created':
+    case 'routine_updated':
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const RoutineScreen()),
+      );
+      break;
+    default:
+      break;
+  }
+}
+
 String _timeAgo(String? iso) {
   if (iso == null) return '';
   final d = DateTime.tryParse(iso)?.toLocal();
@@ -142,7 +169,6 @@ String _timeAgo(String? iso) {
   return '${d.day} ${mo[d.month]}';
 }
 
-// ── NotificationScreen ────────────────────────────────────────────────────────
 class NotificationScreen extends ConsumerWidget {
   const NotificationScreen({super.key});
 
@@ -176,27 +202,31 @@ class NotificationScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final asyncList = ref.watch(notificationsProvider);
     final unread = ref.watch(notifUnreadCountProvider);
-    // ✅ Properly typed String? extraction
     final String? token = ref
         .watch(authTokenProvider)
         .when(data: (t) => t, loading: () => null, error: (_, __) => null);
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final scaffoldBg = isDark
+        ? const Color(0xFF0F0F0F)
+        : const Color(0xFFF2F3F7);
+    final textPrimary = isDark ? Colors.white : const Color(0xFF1A1A1A);
+    final textSecondary = isDark ? Colors.grey[400]! : Colors.grey[600]!;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F3F7),
+      backgroundColor: scaffoldBg,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF1A1A1A)),
+          icon: Icon(Icons.arrow_back, color: textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Notifications',
               style: TextStyle(
-                color: Color(0xFF1A1A1A),
+                color: textPrimary,
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
@@ -254,7 +284,7 @@ class NotificationScreen extends ConsumerWidget {
                 Text(
                   e.toString().replaceFirst('Exception: ', ''),
                   textAlign: TextAlign.center,
-                  style: const TextStyle(color: Colors.grey, fontSize: 13),
+                  style: TextStyle(color: textSecondary, fontSize: 13),
                 ),
                 const SizedBox(height: 12),
                 TextButton(
@@ -282,18 +312,18 @@ class NotificationScreen extends ConsumerWidget {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      const Text(
+                      Text(
                         'No notifications yet',
                         style: TextStyle(
                           fontSize: 17,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF1A1A1A),
+                          color: textPrimary,
                         ),
                       ),
                       const SizedBox(height: 6),
-                      const Text(
+                      Text(
                         'Assignment, routine & notice\nalerts will appear here.',
-                        style: TextStyle(fontSize: 13, color: Colors.grey),
+                        style: TextStyle(fontSize: 13, color: textSecondary),
                         textAlign: TextAlign.center,
                       ),
                     ],
@@ -302,14 +332,25 @@ class NotificationScreen extends ConsumerWidget {
               : ListView.separated(
                   padding: const EdgeInsets.symmetric(vertical: 8),
                   itemCount: list.length,
-                  separatorBuilder: (_, __) =>
-                      const Divider(height: 1, indent: 74, endIndent: 16),
+                  separatorBuilder: (_, __) => Divider(
+                    height: 1,
+                    indent: 74,
+                    endIndent: 16,
+                    color: isDark ? const Color(0xFF2E2E2E) : null,
+                  ),
                   itemBuilder: (_, i) => _Tile(
                     n: list[i],
+                    isDark: isDark,
+                    textPrimary: textPrimary,
+                    textSecondary: textSecondary,
                     onTap: () {
                       if (token != null && list[i]['isRead'] != true) {
                         _markOne(ref, token, list[i]['_id'] as String);
                       }
+                      _navigateByType(
+                        context,
+                        list[i]['type'] as String? ?? '',
+                      );
                     },
                   ),
                 ),
@@ -335,7 +376,16 @@ class _Centred extends StatelessWidget {
 class _Tile extends StatelessWidget {
   final Map<String, dynamic> n;
   final VoidCallback onTap;
-  const _Tile({required this.n, required this.onTap});
+  final bool isDark;
+  final Color textPrimary, textSecondary;
+
+  const _Tile({
+    required this.n,
+    required this.onTap,
+    required this.isDark,
+    required this.textPrimary,
+    required this.textSecondary,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -346,11 +396,16 @@ class _Tile extends StatelessWidget {
     final createdAt = n['createdAt'] as String?;
     final meta = _metaFor(type);
 
+    // ✅ Unread bg adapts: purple tint in light, subtle dark card in dark
+    final tileBg = isRead
+        ? (isDark ? const Color(0xFF1A1A1A) : Colors.white)
+        : (isDark ? const Color(0xFF1A1230) : const Color(0xFFFAF7FF));
+
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: Container(
-        color: isRead ? Colors.white : const Color(0xFFFAF7FF),
+        color: tileBg,
         padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -392,10 +447,7 @@ class _Tile extends StatelessWidget {
                       const Spacer(),
                       Text(
                         _timeAgo(createdAt),
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: Colors.grey,
-                        ),
+                        style: TextStyle(fontSize: 11, color: textSecondary),
                       ),
                       if (!isRead) ...[
                         const SizedBox(width: 6),
@@ -416,7 +468,7 @@ class _Tile extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: isRead ? FontWeight.w500 : FontWeight.bold,
-                      color: const Color(0xFF1A1A1A),
+                      color: textPrimary,
                     ),
                   ),
                   const SizedBox(height: 3),
@@ -426,7 +478,7 @@ class _Tile extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontSize: 12,
-                      color: Colors.grey[600],
+                      color: textSecondary,
                       height: 1.4,
                     ),
                   ),

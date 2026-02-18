@@ -5,12 +5,11 @@ import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:open_filex/open_filex.dart';
 import '../../../auth/data/repositories/notice_repository.dart';
-import '../../../auth/presentation/providers/auth_token_provider.dart';
+import 'package:hamropadhai/features/auth/presentation/providers/auth_token_provider.dart';
 import 'package:hamropadhai/features/auth/presentation/providers/notice_provider.dart';
 
 const _base = 'http://10.0.2.2:5050';
 
-// ── Priority helpers ───────────────────────────────────────────────────────────
 Color _priorityColor(String p) {
   switch (p) {
     case 'high':
@@ -25,10 +24,8 @@ Color _priorityColor(String p) {
 
 String _priorityLabel(String p) => p[0].toUpperCase() + p.substring(1);
 
-// ── Notice Screen ─────────────────────────────────────────────────────────────
 class NoticeScreen extends ConsumerStatefulWidget {
   const NoticeScreen({super.key});
-
   @override
   ConsumerState<NoticeScreen> createState() => _NoticeScreenState();
 }
@@ -39,26 +36,24 @@ class _NoticeScreenState extends ConsumerState<NoticeScreen> {
   @override
   Widget build(BuildContext context) {
     final async = ref.watch(myNoticesProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textPrimary = isDark ? Colors.white : const Color(0xFF1A1A1A);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F3F7),
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF1A1A1A)),
+          icon: Icon(Icons.arrow_back, color: textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Notices',
           style: TextStyle(
-            color: Color(0xFF1A1A1A),
+            color: textPrimary,
             fontSize: 18,
             fontWeight: FontWeight.bold,
           ),
         ),
         actions: [
-          // Unread badge
           Consumer(
             builder: (ctx, r, _) {
               return r
@@ -163,15 +158,14 @@ class _NoticeScreenState extends ConsumerState<NoticeScreen> {
   }
 }
 
-// ── Filter bar ────────────────────────────────────────────────────────────────
 class _FilterBar extends StatelessWidget {
   final String selected;
   final ValueChanged<String> onChanged;
-
   const _FilterBar({required this.selected, required this.onChanged});
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     const filters = [
       ('all', 'All'),
       ('unread', 'Unread'),
@@ -179,9 +173,7 @@ class _FilterBar extends StatelessWidget {
       ('high', 'High'),
       ('low', 'Low'),
     ];
-
     return Container(
-      color: Colors.white,
       padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
@@ -200,7 +192,9 @@ class _FilterBar extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: active
                       ? const Color(0xFF7C3AED)
-                      : const Color(0xFFF3F4F6),
+                      : (isDark
+                            ? const Color(0xFF2E2E2E)
+                            : const Color(0xFFF3F4F6)),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
@@ -208,7 +202,9 @@ class _FilterBar extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: active ? Colors.white : Colors.grey[600],
+                    color: active
+                        ? Colors.white
+                        : (isDark ? Colors.grey[400] : Colors.grey[600]),
                   ),
                 ),
               ),
@@ -220,16 +216,19 @@ class _FilterBar extends StatelessWidget {
   }
 }
 
-// ── Notice Card ───────────────────────────────────────────────────────────────
-// Matches reference: avatar + name + title + preview text + read more + timestamp
 class _NoticeCard extends StatelessWidget {
   final Map<String, dynamic> notice;
   final VoidCallback onTap;
-
   const _NoticeCard({required this.notice, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textPrimary = isDark ? Colors.white : const Color(0xFF1A1A1A);
+    final textSecondary = isDark ? Colors.grey[400]! : Colors.grey[500]!;
+    final cardBg = isDark ? const Color(0xFF1E1E1E) : Colors.white;
+    final unreadBg = isDark ? const Color(0xFF1A1230) : const Color(0xFFFAF7FF);
+
     final title = notice['title'] as String? ?? 'Untitled';
     final content = notice['content'] as String? ?? '';
     final priority = notice['priority'] as String? ?? 'medium';
@@ -238,17 +237,13 @@ class _NoticeCard extends StatelessWidget {
     final createdAt = notice['createdAt'] as String?;
     final createdBy = notice['createdBy'] as Map<String, dynamic>?;
     final attachments = (notice['attachments'] as List<dynamic>?) ?? [];
-
-    // Admin info
     final adminName = createdBy?['fullName'] as String? ?? 'Admin';
     final adminImage = createdBy?['profileImage'] as String?;
-    final adminRole = createdBy?['role'] as String? ?? 'admin';
 
-    // Format date: "16 Feb 2026 – 10:48 AM"
     String formattedDate = '';
     if (createdAt != null) {
       final d = DateTime.parse(createdAt).toLocal();
-      final months = [
+      const months = [
         '',
         'Jan',
         'Feb',
@@ -279,9 +274,9 @@ class _NoticeCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        margin: const EdgeInsets.fromLTRB(0, 0, 0, 2),
+        margin: const EdgeInsets.only(bottom: 2),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: hasRead ? cardBg : unreadBg,
           border: Border(
             left: BorderSide(
               color: hasRead ? Colors.transparent : const Color(0xFF7C3AED),
@@ -290,7 +285,7 @@ class _NoticeCard extends StatelessWidget {
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.03),
+              color: Colors.black.withOpacity(isDark ? 0.0 : 0.03),
               blurRadius: 4,
               offset: const Offset(0, 1),
             ),
@@ -301,20 +296,15 @@ class _NoticeCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ── Admin row ────────────────────────────────────────
               Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // Avatar
                   _AdminAvatar(
                     imageUrl: adminImage != null ? '$_base$adminImage' : null,
                     name: adminName,
                     size: 42,
                   ),
-
                   const SizedBox(width: 10),
-
-                  // Name + role + title
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -329,7 +319,7 @@ class _NoticeCard extends StatelessWidget {
                                   fontWeight: hasRead
                                       ? FontWeight.w600
                                       : FontWeight.bold,
-                                  color: const Color(0xFF1A1A1A),
+                                  color: textPrimary,
                                   height: 1.2,
                                 ),
                                 maxLines: 2,
@@ -353,15 +343,13 @@ class _NoticeCard extends StatelessWidget {
                           adminName,
                           style: TextStyle(
                             fontSize: 12,
-                            color: Colors.grey[500],
+                            color: textSecondary,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
                       ],
                     ),
                   ),
-
-                  // Pin + priority
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
@@ -378,7 +366,7 @@ class _NoticeCard extends StatelessWidget {
                           vertical: 2,
                         ),
                         decoration: BoxDecoration(
-                          color: pColor.withOpacity(0.1),
+                          color: pColor.withOpacity(0.12),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
@@ -394,15 +382,12 @@ class _NoticeCard extends StatelessWidget {
                   ),
                 ],
               ),
-
               const SizedBox(height: 10),
-
-              // ── Content preview ──────────────────────────────────
               RichText(
                 text: TextSpan(
                   style: TextStyle(
                     fontSize: 13,
-                    color: Colors.grey[700],
+                    color: textSecondary,
                     height: 1.5,
                   ),
                   children: [
@@ -423,25 +408,32 @@ class _NoticeCard extends StatelessWidget {
                   ],
                 ),
               ),
-
               const SizedBox(height: 10),
-
-              // ── Footer: attachments + date ───────────────────────
               Row(
                 children: [
                   if (attachments.isNotEmpty) ...[
-                    Icon(Icons.attach_file, size: 13, color: Colors.grey[400]),
+                    Icon(
+                      Icons.attach_file,
+                      size: 13,
+                      color: isDark ? Colors.grey[600] : Colors.grey[400],
+                    ),
                     const SizedBox(width: 3),
                     Text(
                       '${attachments.length} attachment${attachments.length > 1 ? 's' : ''}',
-                      style: TextStyle(fontSize: 11, color: Colors.grey[400]),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: isDark ? Colors.grey[600] : Colors.grey[400],
+                      ),
                     ),
                     const SizedBox(width: 10),
                   ],
                   const Spacer(),
                   Text(
                     formattedDate,
-                    style: TextStyle(fontSize: 11, color: Colors.grey[400]),
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: isDark ? Colors.grey[600] : Colors.grey[400],
+                    ),
                   ),
                 ],
               ),
@@ -453,12 +445,10 @@ class _NoticeCard extends StatelessWidget {
   }
 }
 
-// ── Admin Avatar ──────────────────────────────────────────────────────────────
 class _AdminAvatar extends StatelessWidget {
   final String? imageUrl;
   final String name;
   final double size;
-
   const _AdminAvatar({
     required this.imageUrl,
     required this.name,
@@ -473,7 +463,6 @@ class _AdminAvatar extends StatelessWidget {
         .take(2)
         .map((w) => w.isEmpty ? '' : w[0].toUpperCase())
         .join();
-
     return Container(
       width: size,
       height: size,
@@ -503,34 +492,32 @@ class _InitialsAvatar extends StatelessWidget {
   final String initials;
   final double size;
   const _InitialsAvatar({required this.initials, required this.size});
-
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      color: const Color(0xFFEDE9FE),
-      child: Center(
-        child: Text(
-          initials,
-          style: const TextStyle(
-            color: Color(0xFF7C3AED),
-            fontWeight: FontWeight.bold,
-            fontSize: 14,
-          ),
+  Widget build(BuildContext context) => Container(
+    width: size,
+    height: size,
+    color: const Color(0xFFEDE9FE),
+    child: Center(
+      child: Text(
+        initials,
+        style: const TextStyle(
+          color: Color(0xFF7C3AED),
+          fontWeight: FontWeight.bold,
+          fontSize: 14,
         ),
       ),
-    );
-  }
+    ),
+  );
 }
 
-// ── Empty & Error states ──────────────────────────────────────────────────────
 class _EmptyState extends StatelessWidget {
   final String filter;
   const _EmptyState({required this.filter});
-
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textPrimary = isDark ? Colors.white : const Color(0xFF1A1A1A);
+    final textSecondary = isDark ? Colors.grey[400]! : Colors.grey[500]!;
     return SingleChildScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
       child: SizedBox(
@@ -541,8 +528,10 @@ class _EmptyState extends StatelessWidget {
             children: [
               Container(
                 padding: const EdgeInsets.all(22),
-                decoration: const BoxDecoration(
-                  color: Color(0xFFEDE9FE),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? const Color(0xFF2D1B69)
+                      : const Color(0xFFEDE9FE),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
@@ -552,12 +541,12 @@ class _EmptyState extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 16),
-              const Text(
+              Text(
                 'No notices',
                 style: TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF1A1A1A),
+                  color: textPrimary,
                 ),
               ),
               const SizedBox(height: 6),
@@ -565,7 +554,7 @@ class _EmptyState extends StatelessWidget {
                 filter == 'unread'
                     ? "You've read all notices!"
                     : 'Nothing in this category yet.',
-                style: TextStyle(fontSize: 13, color: Colors.grey[500]),
+                style: TextStyle(fontSize: 13, color: textSecondary),
               ),
             ],
           ),
@@ -579,9 +568,11 @@ class _ErrorState extends StatelessWidget {
   final String message;
   final VoidCallback onRetry;
   const _ErrorState({required this.message, required this.onRetry});
-
   @override
   Widget build(BuildContext context) {
+    final textSecondary = Theme.of(context).brightness == Brightness.dark
+        ? Colors.grey[400]!
+        : Colors.grey[600]!;
     return SingleChildScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
       child: SizedBox(
@@ -594,7 +585,7 @@ class _ErrorState extends StatelessWidget {
               const SizedBox(height: 12),
               Text(
                 message,
-                style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                style: TextStyle(color: textSecondary, fontSize: 13),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 12),
@@ -607,11 +598,9 @@ class _ErrorState extends StatelessWidget {
   }
 }
 
-// ── Notice Detail Screen ───────────────────────────────────────────────────────
 class NoticeDetailScreen extends ConsumerStatefulWidget {
   final Map<String, dynamic> notice;
   const NoticeDetailScreen({super.key, required this.notice});
-
   @override
   ConsumerState<NoticeDetailScreen> createState() => _NoticeDetailScreenState();
 }
@@ -624,9 +613,8 @@ class _NoticeDetailScreenState extends ConsumerState<NoticeDetailScreen> {
   void initState() {
     super.initState();
     _notice = widget.notice;
-    if (_notice['hasRead'] != true) {
+    if (_notice['hasRead'] != true)
       WidgetsBinding.instance.addPostFrameCallback((_) => _markAsRead());
-    }
   }
 
   Future<void> _markAsRead() async {
@@ -677,21 +665,19 @@ class _NoticeDetailScreenState extends ConsumerState<NoticeDetailScreen> {
             headers: token != null ? {'Authorization': 'Bearer $token'} : {},
           )
           .timeout(const Duration(seconds: 30));
-
       if (res.statusCode != 200) throw Exception('Server error');
       final dir = await getTemporaryDirectory();
       final file = File('${dir.path}/$fileName');
       await file.writeAsBytes(res.bodyBytes);
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
       final result = await OpenFilex.open(file.path);
-      if (result.type != ResultType.done && mounted) {
+      if (result.type != ResultType.done && mounted)
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Cannot open: ${result.message}')),
         );
-      }
     } catch (e) {
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
-      if (mounted) {
+      if (mounted)
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -700,12 +686,19 @@ class _NoticeDetailScreenState extends ConsumerState<NoticeDetailScreen> {
             backgroundColor: Colors.red,
           ),
         );
-      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textPrimary = isDark ? Colors.white : const Color(0xFF1A1A1A);
+    final textSecondary = isDark ? Colors.grey[400]! : Colors.grey[500]!;
+    final cardColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
+    final borderColor = isDark
+        ? const Color(0xFF2E2E2E)
+        : Colors.black.withOpacity(0.06);
+
     final title = _notice['title'] as String? ?? 'Untitled';
     final content = _notice['content'] as String? ?? '';
     final priority = _notice['priority'] as String? ?? 'medium';
@@ -715,18 +708,16 @@ class _NoticeDetailScreenState extends ConsumerState<NoticeDetailScreen> {
     final createdBy = _notice['createdBy'] as Map<String, dynamic>?;
     final attachments = ((_notice['attachments'] as List<dynamic>?) ?? [])
         .cast<Map<String, dynamic>>();
-
     final adminName = createdBy?['fullName'] as String? ?? 'Admin';
     final adminImage = createdBy?['profileImage'] as String?;
     final adminEmail = createdBy?['email'] as String?;
     final adminRole = createdBy?['role'] as String? ?? 'admin';
-
     final pColor = _priorityColor(priority);
 
     String formattedDate = '';
     if (createdAt != null) {
       final d = DateTime.parse(createdAt).toLocal();
-      final months = [
+      const months = [
         '',
         'Jan',
         'Feb',
@@ -752,18 +743,15 @@ class _NoticeDetailScreenState extends ConsumerState<NoticeDetailScreen> {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F3F7),
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF1A1A1A)),
+          icon: Icon(Icons.arrow_back, color: textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Notice Detail',
           style: TextStyle(
-            color: Color(0xFF1A1A1A),
+            color: textPrimary,
             fontSize: 18,
             fontWeight: FontWeight.bold,
           ),
@@ -799,9 +787,9 @@ class _NoticeDetailScreenState extends ConsumerState<NoticeDetailScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Posted by card ─────────────────────────────────────
+            // Posted by card
             Container(
-              color: Colors.white,
+              color: cardColor,
               padding: const EdgeInsets.all(16),
               child: Row(
                 children: [
@@ -817,10 +805,10 @@ class _NoticeDetailScreenState extends ConsumerState<NoticeDetailScreen> {
                       children: [
                         Text(
                           adminName,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF1A1A1A),
+                            color: textPrimary,
                           ),
                         ),
                         const SizedBox(height: 2),
@@ -852,7 +840,7 @@ class _NoticeDetailScreenState extends ConsumerState<NoticeDetailScreen> {
                                   adminEmail,
                                   style: TextStyle(
                                     fontSize: 11,
-                                    color: Colors.grey[500],
+                                    color: textSecondary,
                                   ),
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -866,14 +854,18 @@ class _NoticeDetailScreenState extends ConsumerState<NoticeDetailScreen> {
                             Icon(
                               Icons.access_time,
                               size: 12,
-                              color: Colors.grey[400],
+                              color: isDark
+                                  ? Colors.grey[600]
+                                  : Colors.grey[400],
                             ),
                             const SizedBox(width: 4),
                             Text(
                               formattedDate,
                               style: TextStyle(
                                 fontSize: 11,
-                                color: Colors.grey[400],
+                                color: isDark
+                                    ? Colors.grey[600]
+                                    : Colors.grey[400],
                               ),
                             ),
                           ],
@@ -881,7 +873,6 @@ class _NoticeDetailScreenState extends ConsumerState<NoticeDetailScreen> {
                       ],
                     ),
                   ),
-                  // Priority + pin
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
@@ -891,7 +882,7 @@ class _NoticeDetailScreenState extends ConsumerState<NoticeDetailScreen> {
                           vertical: 3,
                         ),
                         decoration: BoxDecoration(
-                          color: pColor.withOpacity(0.1),
+                          color: pColor.withOpacity(0.12),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
@@ -929,49 +920,39 @@ class _NoticeDetailScreenState extends ConsumerState<NoticeDetailScreen> {
                 ],
               ),
             ),
-
-            // ── Thin priority stripe ─────────────────────────────
             Container(height: 3, color: pColor),
-
             const SizedBox(height: 12),
-
-            // ── Title ────────────────────────────────────────────
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Text(
                 title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF1A1A1A),
+                  color: textPrimary,
                   height: 1.3,
                 ),
               ),
             ),
-
             const SizedBox(height: 14),
-
-            // ── Content ──────────────────────────────────────────
             Container(
               width: double.infinity,
               margin: const EdgeInsets.symmetric(horizontal: 16),
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: cardColor,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.black.withOpacity(0.06)),
+                border: Border.all(color: borderColor),
               ),
               child: Text(
                 content,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
-                  color: Color(0xFF374151),
+                  color: isDark ? Colors.grey[300] : const Color(0xFF374151),
                   height: 1.7,
                 ),
               ),
             ),
-
-            // ── Attachments ───────────────────────────────────────
             if (attachments.isNotEmpty) ...[
               const SizedBox(height: 12),
               Padding(
@@ -979,12 +960,12 @@ class _NoticeDetailScreenState extends ConsumerState<NoticeDetailScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Attachments',
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF6B7280),
+                        color: textSecondary,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -1001,8 +982,6 @@ class _NoticeDetailScreenState extends ConsumerState<NoticeDetailScreen> {
                 ),
               ),
             ],
-
-            // ── Mark as read button ────────────────────────────
             if (!hasRead) ...[
               const SizedBox(height: 16),
               Padding(
@@ -1034,7 +1013,6 @@ class _NoticeDetailScreenState extends ConsumerState<NoticeDetailScreen> {
                 ),
               ),
             ],
-
             const SizedBox(height: 32),
           ],
         ),
@@ -1043,7 +1021,6 @@ class _NoticeDetailScreenState extends ConsumerState<NoticeDetailScreen> {
   }
 }
 
-// ── File chip ─────────────────────────────────────────────────────────────────
 class _FileChip extends StatelessWidget {
   final Map<String, dynamic> file;
   final VoidCallback onTap;

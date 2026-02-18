@@ -6,6 +6,7 @@ import '../../../../onboarding/presentation/pages/onboarding_screen1.dart';
 import '../../../../auth/presentation/view_model/auth_viewmodel.dart';
 import '../../../../../core/api/api_endpoints.dart';
 import '../edit_profile_screen.dart';
+import '../settings_screen.dart'; // ✅ import your settings screen
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -30,6 +31,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     showDialog(
       context: context,
       builder: (BuildContext context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
         return Dialog(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
@@ -39,9 +41,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
+                Text(
                   'Choose Image Source',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? Colors.white : Colors.black,
+                  ),
                 ),
                 const SizedBox(height: 24),
                 InkWell(
@@ -66,11 +72,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           ),
                         ),
                         const SizedBox(width: 16),
-                        const Text(
+                        Text(
                           'Camera',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w500,
+                            color: isDark ? Colors.white : Colors.black,
                           ),
                         ),
                       ],
@@ -100,11 +107,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           ),
                         ),
                         const SizedBox(width: 16),
-                        const Text(
+                        Text(
                           'Gallery',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w500,
+                            color: isDark ? Colors.white : Colors.black,
                           ),
                         ),
                       ],
@@ -126,33 +134,29 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       maxHeight: 800,
       imageQuality: 85,
     );
-
     if (pickedFile != null) {
       setState(() => _imageFile = File(pickedFile.path));
-
       try {
         await ref
             .read(authViewModelProvider.notifier)
             .uploadProfileImage(pickedFile.path);
         ref.invalidate(profileProvider);
-        if (mounted) {
+        if (mounted)
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text("Profile image updated successfully"),
               backgroundColor: Colors.green,
             ),
           );
-        }
       } catch (e) {
         setState(() => _imageFile = null);
-        if (mounted) {
+        if (mounted)
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text("Failed to upload: ${e.toString()}"),
               backgroundColor: Colors.red,
             ),
           );
-        }
       }
     }
   }
@@ -160,12 +164,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final profileAsync = ref.watch(profileProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: isDark ? const Color(0xFF0F0F0F) : Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
         leading: Padding(
           padding: const EdgeInsets.all(8.0),
           child: Image.asset("assets/images/books.png", height: 24),
@@ -178,9 +181,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         ),
         centerTitle: false,
         actions: [
+          // ✅ Settings icon instead of notification bell
           IconButton(
-            icon: const Icon(Icons.notifications_outlined, color: Colors.black),
-            onPressed: () {},
+            icon: Icon(
+              Icons.settings_outlined,
+              color: isDark ? Colors.white : Colors.black,
+            ),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const SettingsScreen()),
+            ),
           ),
         ],
       ),
@@ -195,6 +205,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   Widget _buildProfileContent(Map<String, dynamic> profile) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final String fullName = profile['fullName'] ?? 'Unknown';
     final String email = profile['email'] ?? 'No email';
     final String phone = profile['phone'] ?? 'No phone';
@@ -212,6 +223,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           children: [
             const SizedBox(height: 20),
 
+            // Avatar
             GestureDetector(
               onTap: () {
                 if (profileImage != null) {
@@ -273,7 +285,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
             Text(
               fullName,
-              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: isDark ? Colors.white : Colors.black,
+              ),
             ),
 
             const SizedBox(height: 20),
@@ -290,26 +306,24 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               iconColor: Colors.blue,
               title: "Edit Details",
               subtitle: "Edit your information",
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => EditProfileScreen(profile: profile),
-                  ),
-                );
-              },
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => EditProfileScreen(profile: profile),
+                ),
+              ),
             ),
 
+            // ✅ Setting now navigates to SettingsScreen
             _buildMenuTile(
               icon: Icons.settings_outlined,
               iconColor: Colors.orange,
               title: "Setting",
-              subtitle: "Update password and details here",
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Feature coming soon!")),
-                );
-              },
+              subtitle: "Theme and app preferences",
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const SettingsScreen()),
+              ),
             ),
 
             _buildMenuTile(
@@ -317,11 +331,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               iconColor: Colors.teal,
               title: "Support",
               subtitle: "Request here to get support",
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Feature coming soon!")),
-                );
-              },
+              onTap: () => ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("Feature coming soon!")),
+              ),
             ),
 
             const SizedBox(height: 20),
@@ -359,7 +371,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         ],
                       ),
                     );
-
                     if (shouldLogout == true && mounted) {
                       try {
                         showDialog(
@@ -412,6 +423,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   Widget _buildInfoTile(IconData icon, String text) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 8),
       child: Row(
@@ -421,7 +433,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           Expanded(
             child: Text(
               text,
-              style: const TextStyle(fontSize: 16, color: Colors.black87),
+              style: TextStyle(
+                fontSize: 16,
+                color: isDark ? Colors.grey[300] : Colors.black87,
+              ),
             ),
           ),
         ],
@@ -436,6 +451,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     required String subtitle,
     required VoidCallback onTap,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return ListTile(
       onTap: onTap,
       leading: Container(
@@ -448,16 +464,23 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       ),
       title: Text(
         title,
-        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        style: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+          color: isDark ? Colors.white : Colors.black,
+        ),
       ),
       subtitle: Text(
         subtitle,
-        style: const TextStyle(fontSize: 13, color: Colors.grey),
+        style: TextStyle(
+          fontSize: 13,
+          color: isDark ? Colors.grey[500] : Colors.grey,
+        ),
       ),
-      trailing: const Icon(
+      trailing: Icon(
         Icons.arrow_forward_ios,
         size: 16,
-        color: Colors.grey,
+        color: isDark ? Colors.grey[600] : Colors.grey,
       ),
     );
   }
@@ -465,7 +488,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
 class FullScreenImage extends StatelessWidget {
   final String imageUrl;
-
   const FullScreenImage({super.key, required this.imageUrl});
 
   @override
@@ -490,21 +512,19 @@ class FullScreenImage extends StatelessWidget {
                 child: CircularProgressIndicator(color: Colors.white),
               );
             },
-            errorBuilder: (context, error, stackTrace) {
-              return const Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.error_outline, color: Colors.white, size: 60),
-                    SizedBox(height: 16),
-                    Text(
-                      'Unable to load image',
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  ],
-                ),
-              );
-            },
+            errorBuilder: (context, error, stackTrace) => const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.error_outline, color: Colors.white, size: 60),
+                  SizedBox(height: 16),
+                  Text(
+                    'Unable to load image',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       ),

@@ -4,7 +4,6 @@ import '../../../auth/presentation/view_model/auth_viewmodel.dart';
 
 class EditProfileScreen extends ConsumerStatefulWidget {
   final Map<String, dynamic> profile;
-
   const EditProfileScreen({super.key, required this.profile});
 
   @override
@@ -13,7 +12,6 @@ class EditProfileScreen extends ConsumerStatefulWidget {
 
 class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   final _formKey = GlobalKey<FormState>();
-
   late final TextEditingController _fullNameController;
   late final TextEditingController _usernameController;
   late final TextEditingController _emailController;
@@ -21,7 +19,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   late final TextEditingController _aboutController;
   late final TextEditingController _addressController;
   late final TextEditingController _parentContactController;
-
   bool _isLoading = false;
 
   @override
@@ -64,9 +61,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
-
     setState(() => _isLoading = true);
-
     try {
       await ref.read(authViewModelProvider.notifier).updateProfile({
         'fullName': _fullNameController.text.trim(),
@@ -77,9 +72,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         'address': _addressController.text.trim(),
         'parentContact': _parentContactController.text.trim(),
       });
-
       ref.invalidate(profileProvider);
-
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -105,19 +98,20 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textPrimary = isDark ? Colors.white : Colors.black;
+    final textSecondary = isDark ? Colors.grey[400]! : Colors.grey[500]!;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: Icon(Icons.arrow_back, color: textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Edit Details',
           style: TextStyle(
-            color: Colors.black,
+            color: textPrimary,
             fontSize: 18,
             fontWeight: FontWeight.bold,
           ),
@@ -186,7 +180,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 validator: (v) =>
                     v == null || v.trim().isEmpty ? 'Required' : null,
               ),
-
               const SizedBox(height: 8),
               _sectionLabel('Additional Info'),
               _buildField(
@@ -206,9 +199,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 icon: Icons.contact_phone_outlined,
                 keyboardType: TextInputType.phone,
               ),
-
               const SizedBox(height: 24),
-
               SizedBox(
                 width: double.infinity,
                 height: 50,
@@ -235,7 +226,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                         ),
                 ),
               ),
-
               const SizedBox(height: 30),
             ],
           ),
@@ -267,22 +257,32 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     String? Function(String?)? validator,
     int maxLines = 1,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
+    final borderColor = isDark
+        ? const Color(0xFF2E2E2E)
+        : Colors.black.withOpacity(0.06);
+    final iconColor = isDark ? Colors.grey[500]! : Colors.grey[500]!;
+    final labelColor = isDark ? Colors.grey[400]! : Colors.grey[500]!;
+    final textColor = isDark ? Colors.white : Colors.black;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.black.withOpacity(0.06)),
+        border: Border.all(color: borderColor),
       ),
       child: TextFormField(
         controller: controller,
         keyboardType: keyboardType,
         validator: validator,
         maxLines: maxLines,
+        style: TextStyle(color: textColor),
         decoration: InputDecoration(
-          prefixIcon: Icon(icon, color: Colors.grey[500], size: 22),
+          prefixIcon: Icon(icon, color: iconColor, size: 22),
           labelText: label,
-          labelStyle: TextStyle(color: Colors.grey[500], fontSize: 14),
+          labelStyle: TextStyle(color: labelColor, fontSize: 14),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 16,
