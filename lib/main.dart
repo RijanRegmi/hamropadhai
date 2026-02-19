@@ -4,7 +4,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:hamropadhai/app/app.dart';
 import 'package:hamropadhai/features/auth/data/datasources/local/auth_local_datasource.dart';
-import 'package:hamropadhai/features/dashboard/presentation/services/fcm_notification_service.dart';
+import 'package:hamropadhai/features/dashboard/presentation/services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

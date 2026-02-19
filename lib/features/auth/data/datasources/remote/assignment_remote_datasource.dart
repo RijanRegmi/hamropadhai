@@ -1,12 +1,14 @@
 import 'dart:convert';
 import 'dart:async';
 import 'package:http/http.dart' as http;
+import 'package:hamropadhai/core/api/api_endpoints.dart';
 
 class AssignmentRemoteDatasource {
   final http.Client _client;
-  static const String _baseUrl = 'http://10.0.2.2:5050/api/assignments';
 
   AssignmentRemoteDatasource(this._client);
+
+  String get _baseUrl => '${ApiEndpoints.imageBaseUrl}/api/assignments';
 
   Future<List<Map<String, dynamic>>> getMyAssignments(String token) async {
     final res = await _client

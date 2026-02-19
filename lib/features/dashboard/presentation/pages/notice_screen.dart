@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:hamropadhai/core/api/api_endpoints.dart';
+import 'package:hamropadhai/core/services/shake_detector.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:open_filex/open_filex.dart';
-import '../../../auth/data/repositories/notice_repository.dart';
+import 'package:hamropadhai/features/auth/data/repositories/notice_repository.dart';
 import 'package:hamropadhai/features/auth/presentation/providers/auth_token_provider.dart';
 import 'package:hamropadhai/features/auth/presentation/providers/notice_provider.dart';
 
-const _base = 'http://10.0.2.2:5050';
+String get _base => ApiEndpoints.imageBaseUrl;
 
 Color _priorityColor(String p) {
   switch (p) {
@@ -32,6 +34,39 @@ class NoticeScreen extends ConsumerStatefulWidget {
 
 class _NoticeScreenState extends ConsumerState<NoticeScreen> {
   String _filter = 'all';
+  late ShakeDetector _shakeDetector;
+
+  @override
+  void initState() {
+    super.initState();
+    _shakeDetector = ShakeDetector(
+      onShake: () {
+        ref.invalidate(myNoticesProvider);
+        ref.invalidate(unreadCountProvider);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.refresh, color: Colors.white, size: 16),
+                SizedBox(width: 8),
+                Text('Refreshing notices...'),
+              ],
+            ),
+            duration: Duration(seconds: 1),
+            backgroundColor: Color(0xFF7C3AED),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      },
+    );
+    _shakeDetector.start();
+  }
+
+  @override
+  void dispose() {
+    _shakeDetector.stop();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {

@@ -1,11 +1,13 @@
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:hamropadhai/core/api/api_endpoints.dart';
 
 class NoticeRemoteDatasource {
   final http.Client client;
-  static const _base = 'http://10.0.2.2:5050';
 
   NoticeRemoteDatasource(this.client);
+
+  String get _base => ApiEndpoints.imageBaseUrl;
 
   Future<List<Map<String, dynamic>>> getMyNotices(String token) async {
     final res = await client

@@ -32,6 +32,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   @override
   void initState() {
     super.initState();
+    _selectedDay = DateTime.now(); // Auto-select today
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.invalidate(assignmentsProvider);
     });

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'signup_screen.dart';
+import 'package:hamropadhai/features/auth/presentation/pages/forgot_password_screen.dart';
 import '../../../dashboard/presentation/pages/bottom_navigation_screen.dart';
 import '../view_model/auth_viewmodel.dart';
 import '../widgets/auth_header.dart';
@@ -142,7 +143,34 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 controller: passwordController,
                 labelText: "Password",
               ),
-              const SizedBox(height: 20),
+
+              // ✅ Forgot Password — right aligned, sits between password and login button
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const ForgotPasswordScreen(),
+                    ),
+                  ),
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  child: const Text(
+                    'Forgot Password?',
+                    style: TextStyle(
+                      color: Color(0xFF7C3AED),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 12),
 
               CustomButton(
                 text: "Log in",

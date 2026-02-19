@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hamropadhai/core/services/shake_detector.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:file_picker/file_picker.dart';
@@ -19,17 +20,39 @@ class AssignmentScreen extends ConsumerStatefulWidget {
 class _AssignmentScreenState extends ConsumerState<AssignmentScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  late ShakeDetector _shakeDetector;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
+    _shakeDetector = ShakeDetector(
+      onShake: () {
+        _refreshAll();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.refresh, color: Colors.white, size: 16),
+                SizedBox(width: 8),
+                Text('Refreshing assignments...'),
+              ],
+            ),
+            duration: Duration(seconds: 1),
+            backgroundColor: Color(0xFF7C3AED),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      },
+    );
+    _shakeDetector.start();
     WidgetsBinding.instance.addPostFrameCallback((_) => _refreshAll());
   }
 
   @override
   void dispose() {
     _tabController.dispose();
+    _shakeDetector.stop();
     super.dispose();
   }
 

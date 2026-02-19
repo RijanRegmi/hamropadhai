@@ -4,12 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:hamropadhai/features/auth/presentation/providers/auth_token_provider.dart';
+import 'package:hamropadhai/core/api/api_endpoints.dart';
 
 import 'package:hamropadhai/features/dashboard/presentation/pages/assignment_screen.dart';
 import 'package:hamropadhai/features/dashboard/presentation/pages/notice_screen.dart';
 import 'package:hamropadhai/features/dashboard/presentation/pages/routine_screen.dart';
-
-const _base = 'http://10.0.2.2:5050';
 
 // ── Providers ─────────────────────────────────────────────────────────────────
 final notificationsProvider =
@@ -18,7 +17,7 @@ final notificationsProvider =
       if (token == null) throw Exception('Not logged in');
       final res = await http
           .get(
-            Uri.parse('$_base/api/student/notifications'),
+            Uri.parse('${ApiEndpoints.imageBaseUrl}/api/student/notifications'),
             headers: {'Authorization': 'Bearer $token'},
           )
           .timeout(const Duration(seconds: 10));
@@ -34,7 +33,9 @@ final notifUnreadCountProvider = StreamProvider<int>((ref) async* {
       if (token == null) return 0;
       final res = await http
           .get(
-            Uri.parse('$_base/api/student/notifications/unread-count'),
+            Uri.parse(
+              '${ApiEndpoints.imageBaseUrl}/api/student/notifications/unread-count',
+            ),
             headers: {'Authorization': 'Bearer $token'},
           )
           .timeout(const Duration(seconds: 10));
@@ -176,7 +177,9 @@ class NotificationScreen extends ConsumerWidget {
     try {
       await http
           .post(
-            Uri.parse('$_base/api/student/notifications/mark-all-read'),
+            Uri.parse(
+              '${ApiEndpoints.imageBaseUrl}/api/student/notifications/mark-all-read',
+            ),
             headers: {'Authorization': 'Bearer $token'},
           )
           .timeout(const Duration(seconds: 10));
@@ -189,7 +192,9 @@ class NotificationScreen extends ConsumerWidget {
     try {
       await http
           .post(
-            Uri.parse('$_base/api/student/notifications/$id/mark-read'),
+            Uri.parse(
+              '${ApiEndpoints.imageBaseUrl}/api/student/notifications/$id/mark-read',
+            ),
             headers: {'Authorization': 'Bearer $token'},
           )
           .timeout(const Duration(seconds: 10));

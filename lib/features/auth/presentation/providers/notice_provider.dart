@@ -2,12 +2,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../../../auth/presentation/providers/auth_token_provider.dart';
-
-const _base = 'http://10.0.2.2:5050';
+import 'package:hamropadhai/core/api/api_endpoints.dart';
 
 final _noticeRemoteProvider = Provider((ref) => _NoticeRemote());
 
 class _NoticeRemote {
+  String get _base => ApiEndpoints.imageBaseUrl;
+
   Future<List<Map<String, dynamic>>> getMyNotices(String token) async {
     final res = await http
         .get(

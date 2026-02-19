@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hamropadhai/core/services/shake_detector.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../auth/presentation/providers/routine_provider.dart';
 
@@ -10,6 +11,7 @@ class RoutineScreen extends ConsumerStatefulWidget {
 }
 
 class _RoutineScreenState extends ConsumerState<RoutineScreen> {
+  late ShakeDetector _shakeDetector;
   static const List<String> _days = [
     'Sunday',
     'Monday',
@@ -30,6 +32,32 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
     _today = _days[now.weekday % 7];
     _tomorrow = _days[(now.weekday + 1) % 7];
     _selectedDay = _today;
+    _shakeDetector = ShakeDetector(
+      onShake: () {
+        ref.invalidate(routineProvider);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.refresh, color: Colors.white, size: 16),
+                SizedBox(width: 8),
+                Text('Refreshing routine...'),
+              ],
+            ),
+            duration: Duration(seconds: 1),
+            backgroundColor: Color(0xFF7C3AED),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      },
+    );
+    _shakeDetector.start();
+  }
+
+  @override
+  void dispose() {
+    _shakeDetector.stop();
+    super.dispose();
   }
 
   @override

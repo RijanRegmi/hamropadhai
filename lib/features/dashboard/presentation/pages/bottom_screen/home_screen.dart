@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hamropadhai/core/services/shake_detector.dart';
 import 'package:hamropadhai/features/auth/presentation/view_model/auth_viewmodel.dart';
 import 'package:hamropadhai/core/api/api_endpoints.dart';
 import 'package:hamropadhai/features/dashboard/presentation/pages/routine_screen.dart';
 import 'package:hamropadhai/features/dashboard/presentation/pages/assignment_screen.dart';
 import 'package:hamropadhai/features/dashboard/presentation/pages/notice_screen.dart';
 import 'package:hamropadhai/features/dashboard/presentation/pages/notification_screen.dart';
-import 'package:hamropadhai/features/dashboard/presentation/services/fcm_notification_service.dart';
+import 'package:hamropadhai/features/dashboard/presentation/services/notification_service.dart';
 import 'package:hamropadhai/features/auth/presentation/providers/auth_token_provider.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -17,9 +18,31 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
+  late ShakeDetector _shakeDetector;
+
   @override
   void initState() {
     super.initState();
+    _shakeDetector = ShakeDetector(
+      onShake: () {
+        _onRefresh();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.refresh, color: Colors.white, size: 16),
+                SizedBox(width: 8),
+                Text('Refreshing...'),
+              ],
+            ),
+            duration: Duration(seconds: 1),
+            backgroundColor: Color(0xFF7C3AED),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      },
+    );
+    _shakeDetector.start();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       ref.invalidate(profileProvider);
       final token = await ref.read(authTokenProvider.future);
@@ -27,6 +50,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         await NotificationService.instance.startService(token);
       }
     });
+  }
+
+  @override
+  void dispose() {
+    _shakeDetector.stop();
+    super.dispose();
   }
 
   Future<void> _onRefresh() async {
@@ -46,7 +75,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        // ✅ Original logo AppBar restored
         leading: Padding(
           padding: const EdgeInsets.all(8.0),
           child: Image.asset("assets/images/books.png", height: 24),
