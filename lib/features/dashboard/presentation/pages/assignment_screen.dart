@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hamropadhai/core/services/shake_detector.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:file_picker/file_picker.dart';
@@ -19,17 +20,39 @@ class AssignmentScreen extends ConsumerStatefulWidget {
 class _AssignmentScreenState extends ConsumerState<AssignmentScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  late ShakeDetector _shakeDetector;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
+    _shakeDetector = ShakeDetector(
+      onShake: () {
+        _refreshAll();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.refresh, color: Colors.white, size: 16),
+                SizedBox(width: 8),
+                Text('Refreshing assignments...'),
+              ],
+            ),
+            duration: Duration(seconds: 1),
+            backgroundColor: Color(0xFF7C3AED),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      },
+    );
+    _shakeDetector.start();
     WidgetsBinding.instance.addPostFrameCallback((_) => _refreshAll());
   }
 
   @override
   void dispose() {
     _tabController.dispose();
+    _shakeDetector.stop();
     super.dispose();
   }
 
@@ -42,19 +65,19 @@ class _AssignmentScreenState extends ConsumerState<AssignmentScreen>
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textPrimary = isDark ? Colors.white : const Color(0xFF1A1A1A);
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: Icon(Icons.arrow_back, color: textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Assignments',
           style: TextStyle(
-            color: Color(0xFF1A1A1A),
+            color: textPrimary,
             fontSize: 18,
             fontWeight: FontWeight.bold,
           ),
@@ -62,7 +85,7 @@ class _AssignmentScreenState extends ConsumerState<AssignmentScreen>
         bottom: TabBar(
           controller: _tabController,
           labelColor: const Color(0xFF7C3AED),
-          unselectedLabelColor: Colors.grey,
+          unselectedLabelColor: isDark ? Colors.grey[500] : Colors.grey,
           indicatorColor: const Color(0xFF7C3AED),
           indicatorWeight: 3,
           labelStyle: const TextStyle(
@@ -117,16 +140,12 @@ class _AssignmentScreenState extends ConsumerState<AssignmentScreen>
   }
 }
 
-// ── Assignment Tab ─────────────────────────────────────────────────────────────
-
 class _AssignmentTab extends ConsumerWidget {
   final ProviderBase<AsyncValue<List<Map<String, dynamic>>>> provider;
   final ProviderOrFamily invalidateKey;
-  final String emptyMessage;
-  final String emptySubtitle;
+  final String emptyMessage, emptySubtitle;
   final IconData emptyIcon;
-  final bool showSubmitButton;
-  final bool showGrade;
+  final bool showSubmitButton, showGrade;
 
   const _AssignmentTab({
     required this.provider,
@@ -141,6 +160,9 @@ class _AssignmentTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(provider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textPrimary = isDark ? Colors.white : const Color(0xFF1A1A1A);
+    final textSecondary = isDark ? Colors.grey[400]! : Colors.grey[500]!;
 
     Future<void> onRefresh() async => ref.invalidate(invalidateKey);
 
@@ -163,7 +185,7 @@ class _AssignmentTab extends ConsumerWidget {
                   const SizedBox(height: 12),
                   Text(
                     e.toString().replaceFirst('Exception: ', ''),
-                    style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                    style: TextStyle(color: textSecondary, fontSize: 13),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 12),
@@ -184,8 +206,10 @@ class _AssignmentTab extends ConsumerWidget {
                       children: [
                         Container(
                           padding: const EdgeInsets.all(20),
-                          decoration: const BoxDecoration(
-                            color: Color(0xFFEDE9FE),
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? const Color(0xFF2D1B69)
+                                : const Color(0xFFEDE9FE),
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
@@ -197,19 +221,16 @@ class _AssignmentTab extends ConsumerWidget {
                         const SizedBox(height: 16),
                         Text(
                           emptyMessage,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF1A1A1A),
+                            color: textPrimary,
                           ),
                         ),
                         const SizedBox(height: 6),
                         Text(
                           emptySubtitle,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.grey[500],
-                          ),
+                          style: TextStyle(fontSize: 13, color: textSecondary),
                         ),
                       ],
                     ),
@@ -231,12 +252,9 @@ class _AssignmentTab extends ConsumerWidget {
   }
 }
 
-// ── Assignment Card ────────────────────────────────────────────────────────────
-
 class _AssignmentCard extends StatelessWidget {
   final Map<String, dynamic> assignment;
-  final bool showSubmitButton;
-  final bool showGrade;
+  final bool showSubmitButton, showGrade;
   final Future<void> Function() onRefresh;
 
   const _AssignmentCard({
@@ -248,6 +266,14 @@ class _AssignmentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
+    final borderColor = isDark
+        ? const Color(0xFF2E2E2E)
+        : Colors.black.withOpacity(0.06);
+    final textPrimary = isDark ? Colors.white : const Color(0xFF1A1A1A);
+    final textSecondary = isDark ? Colors.grey[400]! : Colors.grey[500]!;
+
     final title = assignment['title'] ?? 'Untitled';
     final subject = assignment['subject'] ?? '';
     final totalMarks = assignment['totalMarks'] ?? 0;
@@ -272,19 +298,19 @@ class _AssignmentCard extends StatelessWidget {
     Color statusBg;
     if (isGraded) {
       statusColor = const Color(0xFF10B981);
-      statusBg = const Color(0xFFD1FAE5);
+      statusBg = isDark ? const Color(0xFF064E3B) : const Color(0xFFD1FAE5);
       statusText = 'Graded';
     } else if (hasSubmitted) {
       statusColor = const Color(0xFF3B82F6);
-      statusBg = const Color(0xFFDBEAFE);
+      statusBg = isDark ? const Color(0xFF1E3A5F) : const Color(0xFFDBEAFE);
       statusText = 'Submitted';
     } else if (isOverdue) {
       statusColor = const Color(0xFFEF4444);
-      statusBg = const Color(0xFFFEE2E2);
+      statusBg = isDark ? const Color(0xFF4B1818) : const Color(0xFFFEE2E2);
       statusText = 'Overdue';
     } else {
       statusColor = const Color(0xFFF59E0B);
-      statusBg = const Color(0xFFFEF3C7);
+      statusBg = isDark ? const Color(0xFF451A03) : const Color(0xFFFEF3C7);
       statusText = 'Pending';
     }
 
@@ -302,16 +328,18 @@ class _AssignmentCard extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: cardColor,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.black.withOpacity(0.06)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          border: Border.all(color: borderColor),
+          boxShadow: isDark
+              ? []
+              : [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.04),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -321,7 +349,9 @@ class _AssignmentCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFEDE9FE),
+                    color: isDark
+                        ? const Color(0xFF2D1B69)
+                        : const Color(0xFFEDE9FE),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: const Icon(
@@ -337,10 +367,10 @@ class _AssignmentCard extends StatelessWidget {
                     children: [
                       Text(
                         title,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF1A1A1A),
+                          color: textPrimary,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -348,7 +378,7 @@ class _AssignmentCard extends StatelessWidget {
                       const SizedBox(height: 2),
                       Text(
                         '$subject · $totalMarks marks',
-                        style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                        style: TextStyle(fontSize: 12, color: textSecondary),
                       ),
                     ],
                   ),
@@ -380,14 +410,16 @@ class _AssignmentCard extends StatelessWidget {
                   Icon(
                     Icons.access_time,
                     size: 13,
-                    color: isOverdue ? Colors.red : Colors.grey[400],
+                    color: isOverdue
+                        ? Colors.red
+                        : (isDark ? Colors.grey[600] : Colors.grey[400]),
                   ),
                   const SizedBox(width: 4),
                   Text(
                     'Due: $formattedDue',
                     style: TextStyle(
                       fontSize: 12,
-                      color: isOverdue ? Colors.red : Colors.grey[500],
+                      color: isOverdue ? Colors.red : textSecondary,
                       fontWeight: isOverdue
                           ? FontWeight.w600
                           : FontWeight.normal,
@@ -404,7 +436,9 @@ class _AssignmentCard extends StatelessWidget {
                   vertical: 8,
                 ),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFD1FAE5),
+                  color: isDark
+                      ? const Color(0xFF064E3B)
+                      : const Color(0xFFD1FAE5),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
@@ -416,7 +450,7 @@ class _AssignmentCard extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF065F46),
+                        color: Color(0xFF6EE7B7),
                       ),
                     ),
                     if (feedback != null && feedback.isNotEmpty) ...[
@@ -426,7 +460,7 @@ class _AssignmentCard extends StatelessWidget {
                           '· $feedback',
                           style: const TextStyle(
                             fontSize: 12,
-                            color: Color(0xFF065F46),
+                            color: Color(0xFF6EE7B7),
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -473,8 +507,6 @@ class _AssignmentCard extends StatelessWidget {
   }
 }
 
-// ── Assignment Detail Screen ───────────────────────────────────────────────────
-
 class AssignmentDetailScreen extends ConsumerStatefulWidget {
   final Map<String, dynamic> assignment;
   final Future<void> Function() onRefresh;
@@ -494,7 +526,6 @@ class _AssignmentDetailScreenState
   final _textController = TextEditingController();
   bool _submitting = false;
   List<PlatformFile> _pickedFiles = [];
-
   static const String _baseUrl = 'http://10.0.2.2:5050';
 
   @override
@@ -502,9 +533,8 @@ class _AssignmentDetailScreenState
     super.initState();
     final mySubmission =
         widget.assignment['mySubmission'] as Map<String, dynamic>?;
-    if (mySubmission != null) {
+    if (mySubmission != null)
       _textController.text = mySubmission['textContent'] ?? '';
-    }
   }
 
   @override
@@ -519,11 +549,10 @@ class _AssignmentDetailScreenState
         allowMultiple: true,
         type: FileType.any,
       );
-      if (result != null) {
+      if (result != null)
         setState(() => _pickedFiles = [..._pickedFiles, ...result.files]);
-      }
     } catch (e) {
-      if (mounted) {
+      if (mounted)
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -532,7 +561,6 @@ class _AssignmentDetailScreenState
             backgroundColor: Colors.red,
           ),
         );
-      }
     }
   }
 
@@ -542,11 +570,10 @@ class _AssignmentDetailScreenState
         allowMultiple: true,
         type: FileType.image,
       );
-      if (result != null) {
+      if (result != null)
         setState(() => _pickedFiles = [..._pickedFiles, ...result.files]);
-      }
     } catch (e) {
-      if (mounted) {
+      if (mounted)
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -555,13 +582,10 @@ class _AssignmentDetailScreenState
             backgroundColor: Colors.red,
           ),
         );
-      }
     }
   }
 
-  void _removeFile(int index) {
-    setState(() => _pickedFiles.removeAt(index));
-  }
+  void _removeFile(int index) => setState(() => _pickedFiles.removeAt(index));
 
   Future<void> _submit() async {
     if (_textController.text.trim().isEmpty && _pickedFiles.isEmpty) {
@@ -573,25 +597,18 @@ class _AssignmentDetailScreenState
       );
       return;
     }
-
     setState(() => _submitting = true);
-
     try {
       final token = await ref.read(authTokenProvider.future);
       if (token == null) throw Exception('Not logged in');
-
       final assignmentId = widget.assignment['_id'] as String;
       final uri = Uri.parse('$_baseUrl/api/assignments/$assignmentId/submit');
-
       final request = http.MultipartRequest('POST', uri)
         ..headers['Authorization'] = 'Bearer $token';
-
-      if (_textController.text.trim().isNotEmpty) {
+      if (_textController.text.trim().isNotEmpty)
         request.fields['textContent'] = _textController.text.trim();
-      }
-
       for (final file in _pickedFiles) {
-        if (file.path != null) {
+        if (file.path != null)
           request.files.add(
             await http.MultipartFile.fromPath(
               'files',
@@ -599,15 +616,12 @@ class _AssignmentDetailScreenState
               filename: file.name,
             ),
           );
-        }
       }
-
       final streamed = await request.send().timeout(
         const Duration(seconds: 30),
       );
       final response = await http.Response.fromStream(streamed);
       final decoded = jsonDecode(response.body);
-
       if (response.statusCode >= 200 && response.statusCode < 300) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -616,9 +630,7 @@ class _AssignmentDetailScreenState
               backgroundColor: Colors.green,
             ),
           );
-          setState(() {
-            _pickedFiles = [];
-          });
+          setState(() => _pickedFiles = []);
           await widget.onRefresh();
           Navigator.pop(context);
         }
@@ -626,14 +638,13 @@ class _AssignmentDetailScreenState
         throw Exception(decoded['message'] ?? 'Failed to submit');
       }
     } catch (e) {
-      if (mounted) {
+      if (mounted)
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(e.toString().replaceFirst('Exception: ', '')),
             backgroundColor: Colors.red,
           ),
         );
-      }
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -642,8 +653,6 @@ class _AssignmentDetailScreenState
   Future<void> _openFile(String fileUrl) async {
     final fullUrl = '$_baseUrl$fileUrl';
     final token = await ref.read(authTokenProvider.future);
-
-    // Show loading
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Row(
@@ -663,7 +672,6 @@ class _AssignmentDetailScreenState
         duration: Duration(seconds: 10),
       ),
     );
-
     try {
       final response = await http
           .get(
@@ -671,34 +679,26 @@ class _AssignmentDetailScreenState
             headers: token != null ? {'Authorization': 'Bearer $token'} : {},
           )
           .timeout(const Duration(seconds: 30));
-
       if (response.statusCode != 200)
         throw Exception('Server returned ${response.statusCode}');
-
-      // Save to temp directory
       final fileName = fileUrl.split('/').last;
       final tempDir = await getTemporaryDirectory();
       final file = File('${tempDir.path}/$fileName');
       await file.writeAsBytes(response.bodyBytes);
-
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
-
-      // Open with system app using open_filex (handles content URI on Android)
       final result = await OpenFilex.open(file.path);
-      if (result.type != ResultType.done) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'No app found to open this file type: ${result.message}',
-              ),
+      if (result.type != ResultType.done && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'No app found to open this file type: ${result.message}',
             ),
-          );
-        }
+          ),
+        );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
-      if (mounted) {
+      if (mounted)
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -707,12 +707,19 @@ class _AssignmentDetailScreenState
             backgroundColor: Colors.red,
           ),
         );
-      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textPrimary = isDark ? Colors.white : const Color(0xFF1A1A1A);
+    final textSecondary = isDark ? Colors.grey[400]! : Colors.grey[500]!;
+    final cardColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
+    final borderColor = isDark
+        ? const Color(0xFF2E2E2E)
+        : Colors.black.withOpacity(0.06);
+
     final a = widget.assignment;
     final title = a['title'] ?? 'Untitled';
     final description = a['description'] ?? '';
@@ -744,18 +751,15 @@ class _AssignmentDetailScreenState
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: Icon(Icons.arrow_back, color: textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Assignment Details',
           style: TextStyle(
-            color: Color(0xFF1A1A1A),
+            color: textPrimary,
             fontSize: 18,
             fontWeight: FontWeight.bold,
           ),
@@ -766,7 +770,7 @@ class _AssignmentDetailScreenState
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Header ────────────────────────────────────────────────
+            // Header gradient card — always purple, fine in dark mode
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(20),
@@ -820,18 +824,19 @@ class _AssignmentDetailScreenState
                 ],
               ),
             ),
-
             const SizedBox(height: 16),
 
-            // ── Description ───────────────────────────────────────────
             if (description.isNotEmpty) ...[
               _Section(
                 title: 'Description',
+                cardColor: cardColor,
+                borderColor: borderColor,
+                textPrimary: textPrimary,
                 child: Text(
                   description,
                   style: TextStyle(
                     fontSize: 14,
-                    color: Colors.grey[700],
+                    color: textSecondary,
                     height: 1.5,
                   ),
                 ),
@@ -839,10 +844,12 @@ class _AssignmentDetailScreenState
               const SizedBox(height: 12),
             ],
 
-            // ── Assignment attachments (downloadable) ─────────────────
             if (attachments.isNotEmpty) ...[
               _Section(
                 title: 'Attached Files',
+                cardColor: cardColor,
+                borderColor: borderColor,
+                textPrimary: textPrimary,
                 child: Column(
                   children: attachments
                       .map(
@@ -858,15 +865,20 @@ class _AssignmentDetailScreenState
               const SizedBox(height: 12),
             ],
 
-            // ── Grade card ────────────────────────────────────────────
             if (isGraded && marks != null) ...[
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFD1FAE5),
+                  color: isDark
+                      ? const Color(0xFF064E3B)
+                      : const Color(0xFFD1FAE5),
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: const Color(0xFF6EE7B7)),
+                  border: Border.all(
+                    color: isDark
+                        ? const Color(0xFF065F46)
+                        : const Color(0xFF6EE7B7),
+                  ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -884,7 +896,7 @@ class _AssignmentDetailScreenState
                           style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF065F46),
+                            color: Color(0xFF6EE7B7),
                           ),
                         ),
                         const Spacer(),
@@ -893,20 +905,20 @@ class _AssignmentDetailScreenState
                           style: const TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF065F46),
+                            color: Color(0xFF6EE7B7),
                           ),
                         ),
                       ],
                     ),
                     if (feedback != null && feedback.isNotEmpty) ...[
                       const SizedBox(height: 8),
-                      const Divider(color: Color(0xFF6EE7B7)),
+                      const Divider(color: Color(0xFF065F46)),
                       const SizedBox(height: 4),
                       Text(
                         'Feedback: $feedback',
                         style: const TextStyle(
                           fontSize: 13,
-                          color: Color(0xFF065F46),
+                          color: Color(0xFF6EE7B7),
                           fontStyle: FontStyle.italic,
                         ),
                       ),
@@ -917,17 +929,19 @@ class _AssignmentDetailScreenState
               const SizedBox(height: 12),
             ],
 
-            // ── My submission ─────────────────────────────────────────
             if (hasSubmitted && mySubmission != null) ...[
               _Section(
                 title: 'My Submission',
+                cardColor: cardColor,
+                borderColor: borderColor,
+                textPrimary: textPrimary,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     if (submittedAt != null)
                       Text(
                         'Submitted on ${_formatDate(submittedAt.toString())}',
-                        style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                        style: TextStyle(fontSize: 12, color: textSecondary),
                       ),
                     if (submittedText != null && submittedText.isNotEmpty) ...[
                       const SizedBox(height: 8),
@@ -935,21 +949,31 @@ class _AssignmentDetailScreenState
                         width: double.infinity,
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF8F7FF),
+                          color: isDark
+                              ? const Color(0xFF2D1B69)
+                              : const Color(0xFFF8F7FF),
                           borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: const Color(0xFFEDE9FE)),
+                          border: Border.all(
+                            color: isDark
+                                ? const Color(0xFF4C1D95)
+                                : const Color(0xFFEDE9FE),
+                          ),
                         ),
                         child: Text(
                           submittedText,
-                          style: const TextStyle(fontSize: 13, height: 1.5),
+                          style: TextStyle(
+                            fontSize: 13,
+                            height: 1.5,
+                            color: textPrimary,
+                          ),
                         ),
                       ),
                     ],
                     if (submittedFiles.isNotEmpty) ...[
                       const SizedBox(height: 10),
-                      const Text(
+                      Text(
                         'Submitted files:',
-                        style: TextStyle(fontSize: 12, color: Colors.grey),
+                        style: TextStyle(fontSize: 12, color: textSecondary),
                       ),
                       const SizedBox(height: 6),
                       ...submittedFiles.map(
@@ -966,27 +990,34 @@ class _AssignmentDetailScreenState
               const SizedBox(height: 12),
             ],
 
-            // ── Submit / Resubmit ─────────────────────────────────────
             if (!isOverdue) ...[
               _Section(
                 title: hasSubmitted
                     ? 'Resubmit Assignment'
                     : 'Submit Assignment',
+                cardColor: cardColor,
+                borderColor: borderColor,
+                textPrimary: textPrimary,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Text answer
                     TextField(
                       controller: _textController,
                       maxLines: 5,
+                      style: TextStyle(color: textPrimary),
                       decoration: InputDecoration(
                         hintText: 'Write your answer here (optional)...',
+                        hintStyle: TextStyle(color: textSecondary),
                         filled: true,
-                        fillColor: const Color(0xFFF8F7FF),
+                        fillColor: isDark
+                            ? const Color(0xFF2D1B69)
+                            : const Color(0xFFF8F7FF),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(
-                            color: Color(0xFFEDE9FE),
+                          borderSide: BorderSide(
+                            color: isDark
+                                ? const Color(0xFF4C1D95)
+                                : const Color(0xFFEDE9FE),
                           ),
                         ),
                         focusedBorder: OutlineInputBorder(
@@ -998,97 +1029,44 @@ class _AssignmentDetailScreenState
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(
-                            color: Color(0xFFEDE9FE),
+                          borderSide: BorderSide(
+                            color: isDark
+                                ? const Color(0xFF4C1D95)
+                                : const Color(0xFFEDE9FE),
                           ),
                         ),
                       ),
                     ),
-
                     const SizedBox(height: 12),
-
-                    // Attach files — two buttons: Photos and Files
                     Row(
                       children: [
                         Expanded(
-                          child: GestureDetector(
+                          child: _AttachButton(
+                            icon: Icons.photo_library_outlined,
+                            label: 'Photos',
                             onTap: _pickImages,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFF3EEFF),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: const Color(0xFF7C3AED),
-                                  width: 1.5,
-                                ),
-                              ),
-                              child: const Column(
-                                children: [
-                                  Icon(
-                                    Icons.photo_library_outlined,
-                                    color: Color(0xFF7C3AED),
-                                    size: 24,
-                                  ),
-                                  SizedBox(height: 4),
-                                  Text(
-                                    'Photos',
-                                    style: TextStyle(
-                                      color: Color(0xFF7C3AED),
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 13,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
+                            isDark: isDark,
                           ),
                         ),
                         const SizedBox(width: 10),
                         Expanded(
-                          child: GestureDetector(
+                          child: _AttachButton(
+                            icon: Icons.attach_file,
+                            label: 'Any File',
                             onTap: _pickFiles,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFF3EEFF),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: const Color(0xFF7C3AED),
-                                  width: 1.5,
-                                ),
-                              ),
-                              child: const Column(
-                                children: [
-                                  Icon(
-                                    Icons.attach_file,
-                                    color: Color(0xFF7C3AED),
-                                    size: 24,
-                                  ),
-                                  SizedBox(height: 4),
-                                  Text(
-                                    'Any File',
-                                    style: TextStyle(
-                                      color: Color(0xFF7C3AED),
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 13,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
+                            isDark: isDark,
                           ),
                         ),
                       ],
                     ),
-
                     const SizedBox(height: 6),
                     Text(
                       'Photos (JPG, PNG) · Any file (PDF, DOC, PPT…) · Max 10MB each',
-                      style: TextStyle(fontSize: 11, color: Colors.grey[400]),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: isDark ? Colors.grey[600] : Colors.grey[400],
+                      ),
                     ),
-
-                    // Picked files list
                     if (_pickedFiles.isNotEmpty) ...[
                       const SizedBox(height: 12),
                       ..._pickedFiles.asMap().entries.map(
@@ -1099,7 +1077,9 @@ class _AssignmentDetailScreenState
                             vertical: 10,
                           ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFEDE9FE),
+                            color: isDark
+                                ? const Color(0xFF2D1B69)
+                                : const Color(0xFFEDE9FE),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Row(
@@ -1116,9 +1096,10 @@ class _AssignmentDetailScreenState
                                   children: [
                                     Text(
                                       e.value.name,
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontSize: 13,
                                         fontWeight: FontWeight.w500,
+                                        color: textPrimary,
                                       ),
                                       overflow: TextOverflow.ellipsis,
                                     ),
@@ -1126,7 +1107,7 @@ class _AssignmentDetailScreenState
                                       '${((e.value.size) / 1024).toStringAsFixed(1)} KB',
                                       style: TextStyle(
                                         fontSize: 11,
-                                        color: Colors.grey[500],
+                                        color: textSecondary,
                                       ),
                                     ),
                                   ],
@@ -1152,10 +1133,7 @@ class _AssignmentDetailScreenState
                         ),
                       ),
                     ],
-
                     const SizedBox(height: 16),
-
-                    // Submit button
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
@@ -1196,7 +1174,9 @@ class _AssignmentDetailScreenState
                 width: double.infinity,
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFEE2E2),
+                  color: isDark
+                      ? const Color(0xFF4B1818)
+                      : const Color(0xFFFEE2E2),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Row(
@@ -1214,7 +1194,6 @@ class _AssignmentDetailScreenState
                 ),
               ),
             ],
-
             const SizedBox(height: 24),
           ],
         ),
@@ -1232,13 +1211,50 @@ class _AssignmentDetailScreenState
   }
 }
 
-// ── File chip (downloadable) ───────────────────────────────────────────────────
+class _AttachButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final bool isDark;
+  const _AttachButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    required this.isDark,
+  });
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF2D1B69) : const Color(0xFFF3EEFF),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFF7C3AED), width: 1.5),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: const Color(0xFF7C3AED), size: 24),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: const TextStyle(
+                color: Color(0xFF7C3AED),
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 class _FileChip extends StatelessWidget {
-  final String fileName;
-  final String fileType;
+  final String fileName, fileType;
   final VoidCallback onTap;
-
   const _FileChip({
     required this.fileName,
     required this.fileType,
@@ -1314,32 +1330,36 @@ class _FileChip extends StatelessWidget {
   }
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
 class _Section extends StatelessWidget {
   final String title;
   final Widget child;
-  const _Section({required this.title, required this.child});
-
+  final Color cardColor, borderColor, textPrimary;
+  const _Section({
+    required this.title,
+    required this.child,
+    required this.cardColor,
+    required this.borderColor,
+    required this.textPrimary,
+  });
   @override
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardColor,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.black.withOpacity(0.06)),
+        border: Border.all(color: borderColor),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             title,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF1A1A1A),
+              color: textPrimary,
             ),
           ),
           const SizedBox(height: 10),
@@ -1354,7 +1374,6 @@ class _PillChip extends StatelessWidget {
   final String label;
   final bool light;
   const _PillChip({required this.label, this.light = false});
-
   @override
   Widget build(BuildContext context) {
     return Container(

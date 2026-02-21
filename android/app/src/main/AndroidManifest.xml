@@ -1,4 +1,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- ✅ Required for receiving FCM push notifications on Android 13+ -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+
+    <!-- ✅ Required to reach Firebase servers for FCM -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+
     <application
         android:label="hamropadhai"
         android:name="${applicationName}"
@@ -30,6 +37,28 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+
+        <!-- ✅ FCM: Receives push notifications when app is in background or terminated.
+             Without this service, notifications only work while the app is open. -->
+        <service
+            android:name="com.google.firebase.messaging.FirebaseMessagingService"
+            android:exported="false">
+            <intent-filter android:priority="-500">
+                <action android:name="com.google.firebase.MESSAGING_EVENT"/>
+            </intent-filter>
+        </service>
+
+        <!-- ✅ FCM: Sets the default icon shown in the notification shade -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@mipmap/ic_launcher"/>
+
+        <!-- ✅ FCM: Default notification channel for Android 8.0+ (Oreo and above).
+             This is used when FCM sends a notification without specifying a channel. -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="hp_notices"/>
+
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and
