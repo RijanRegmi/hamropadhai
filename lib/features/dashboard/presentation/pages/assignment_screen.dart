@@ -3,12 +3,14 @@ import 'package:hamropadhai/core/services/shake_detector.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:file_picker/file_picker.dart';
+import 'package:image_picker/image_picker.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:open_filex/open_filex.dart';
 import '../../../auth/presentation/providers/assignment_provider.dart';
 import '../../../auth/presentation/providers/auth_token_provider.dart';
+import '../../../../../core/api/api_endpoints.dart';
 
 class AssignmentScreen extends ConsumerStatefulWidget {
   const AssignmentScreen({super.key});
@@ -526,7 +528,9 @@ class _AssignmentDetailScreenState
   final _textController = TextEditingController();
   bool _submitting = false;
   List<PlatformFile> _pickedFiles = [];
-  static const String _baseUrl = 'http://10.0.2.2:5050';
+
+  // ✅ CHANGED: use ApiEndpoints instead of hardcoded 10.0.2.2
+  String get _baseUrl => ApiEndpoints.imageBaseUrl;
 
   @override
   void initState() {
@@ -541,6 +545,169 @@ class _AssignmentDetailScreenState
   void dispose() {
     _textController.dispose();
     super.dispose();
+  }
+
+  // ✅ ADDED: Camera/Gallery/File picker dialog (same pattern as profile screen)
+  Future<void> _showAttachmentSourceDialog() async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    await showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Add Attachment',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? Colors.white : Colors.black,
+                ),
+              ),
+              const SizedBox(height: 24),
+              InkWell(
+                onTap: () async {
+                  Navigator.pop(context);
+                  await _pickFromCamera();
+                },
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(
+                          Icons.camera_alt,
+                          color: Colors.blue,
+                          size: 24,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Text(
+                        'Camera',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color: isDark ? Colors.white : Colors.black,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 4),
+              InkWell(
+                onTap: () async {
+                  Navigator.pop(context);
+                  await _pickImages();
+                },
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.green.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(
+                          Icons.photo_library,
+                          color: Colors.green,
+                          size: 24,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Text(
+                        'Gallery',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color: isDark ? Colors.white : Colors.black,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 4),
+              InkWell(
+                onTap: () async {
+                  Navigator.pop(context);
+                  await _pickFiles();
+                },
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(
+                          Icons.attach_file,
+                          color: Colors.orange,
+                          size: 24,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Text(
+                        'Any File',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color: isDark ? Colors.white : Colors.black,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ✅ ADDED: Camera capture using image_picker
+  Future<void> _pickFromCamera() async {
+    try {
+      final picker = ImagePicker();
+      final XFile? photo = await picker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 85,
+      );
+      if (photo != null) {
+        final bytes = await photo.readAsBytes();
+        final pf = PlatformFile(
+          name: photo.name,
+          size: bytes.length,
+          path: photo.path,
+          bytes: bytes,
+        );
+        setState(() => _pickedFiles = [..._pickedFiles, pf]);
+      }
+    } catch (e) {
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Could not open camera: ${e.toString().replaceFirst('Exception: ', '')}',
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+    }
   }
 
   Future<void> _pickFiles() async {
@@ -770,7 +937,7 @@ class _AssignmentDetailScreenState
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header gradient card — always purple, fine in dark mode
+            // Header gradient card
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(20),
@@ -1038,30 +1205,19 @@ class _AssignmentDetailScreenState
                       ),
                     ),
                     const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _AttachButton(
-                            icon: Icons.photo_library_outlined,
-                            label: 'Photos',
-                            onTap: _pickImages,
-                            isDark: isDark,
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: _AttachButton(
-                            icon: Icons.attach_file,
-                            label: 'Any File',
-                            onTap: _pickFiles,
-                            isDark: isDark,
-                          ),
-                        ),
-                      ],
+                    // ✅ CHANGED: Single button that opens Camera/Gallery/File dialog
+                    SizedBox(
+                      width: double.infinity,
+                      child: _AttachButton(
+                        icon: Icons.add_photo_alternate_outlined,
+                        label: 'Add Attachment',
+                        onTap: _showAttachmentSourceDialog,
+                        isDark: isDark,
+                      ),
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      'Photos (JPG, PNG) · Any file (PDF, DOC, PPT…) · Max 10MB each',
+                      'Camera · Photos (JPG, PNG) · Any file (PDF, DOC, PPT…) · Max 10MB each',
                       style: TextStyle(
                         fontSize: 11,
                         color: isDark ? Colors.grey[600] : Colors.grey[400],

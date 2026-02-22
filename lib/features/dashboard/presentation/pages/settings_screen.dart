@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:local_auth/local_auth.dart';
 import 'package:hamropadhai/core/theme/theme_provider.dart';
 import 'package:hamropadhai/features/dashboard/presentation/pages/change_password_screen.dart';
 import 'package:hamropadhai/features/auth/presentation/view_model/auth_viewmodel.dart';
 import 'package:hamropadhai/features/auth/presentation/pages/login_screen.dart';
+import 'package:hamropadhai/core/providers/biometric_provider.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -22,6 +24,14 @@ class SettingsScreen extends ConsumerWidget {
     final luxValue = themeMode == AppThemeMode.sensor
         ? luxAsync.whenOrNull(data: (lux) => lux)
         : null;
+
+    final biometricEnabled = ref.watch(biometricEnabledProvider);
+
+    // ✅ Get current logged-in username from profileProvider
+    // profileProvider returns Map<String, dynamic>
+    final profileAsync = ref.watch(profileProvider);
+    final currentUsername =
+        profileAsync.whenOrNull(data: (p) => p['username'] as String?) ?? '';
 
     Future<void> handleLogout() async {
       final confirm = await showDialog<bool>(
@@ -57,7 +67,6 @@ class SettingsScreen extends ConsumerWidget {
           ],
         ),
       );
-
       if (confirm == true) {
         await ref.read(authViewModelProvider.notifier).logout();
         if (context.mounted) {
@@ -65,6 +74,294 @@ class SettingsScreen extends ConsumerWidget {
             context,
             MaterialPageRoute(builder: (_) => const LoginScreen()),
             (route) => false,
+          );
+        }
+      }
+    }
+
+    // ✅ Ask user to enter their password so we can save credentials right now
+    Future<String?> promptForPassword() async {
+      final controller = TextEditingController();
+      bool obscure = true;
+      return showDialog<String>(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => StatefulBuilder(
+          builder: (ctx, setState) => AlertDialog(
+            backgroundColor: cardColor,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            title: Row(
+              children: [
+                const Icon(
+                  Icons.fingerprint,
+                  color: Color(0xFF7C3AED),
+                  size: 24,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Enter Your Password',
+                    style: TextStyle(
+                      color: textPrimary,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'To save fingerprint login for "@$currentUsername", please confirm your password:',
+                  style: TextStyle(
+                    color: isDark ? Colors.grey[400] : Colors.grey[600],
+                    fontSize: 13,
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: controller,
+                  obscureText: obscure,
+                  autofocus: true,
+                  style: TextStyle(color: textPrimary),
+                  decoration: InputDecoration(
+                    hintText: 'Your password',
+                    hintStyle: TextStyle(color: textSecondary),
+                    filled: true,
+                    fillColor: isDark
+                        ? const Color(0xFF2A2A2A)
+                        : const Color(0xFFF5F5F5),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide.none,
+                    ),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        obscure ? Icons.visibility_off : Icons.visibility,
+                        color: textSecondary,
+                        size: 20,
+                      ),
+                      onPressed: () => setState(() => obscure = !obscure),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, null),
+                child: Text('Cancel', style: TextStyle(color: textSecondary)),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF7C3AED),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                onPressed: () {
+                  final pw = controller.text;
+                  Navigator.pop(ctx, pw.isEmpty ? null : pw);
+                },
+                child: const Text('Confirm'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    Future<void> handleBiometricToggle(bool value) async {
+      final localAuth = LocalAuthentication();
+
+      if (value) {
+        // ── Turning ON ──────────────────────────────────────────
+        final bool canCheck = await localAuth.canCheckBiometrics;
+        final bool isSupported = await localAuth.isDeviceSupported();
+
+        if (!canCheck || !isSupported) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'Biometric authentication is not available on this device',
+                ),
+                backgroundColor: Colors.red,
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+          return;
+        }
+
+        final List<BiometricType> available = await localAuth
+            .getAvailableBiometrics();
+
+        if (available.isEmpty) {
+          if (context.mounted) {
+            await showDialog(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                backgroundColor: cardColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                title: Text(
+                  'No Fingerprint Found',
+                  style: TextStyle(
+                    color: textPrimary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                content: Text(
+                  'No fingerprint is enrolled on this device.\n\nPlease go to:\nSettings → Security → Fingerprint\nand add a fingerprint first.',
+                  style: TextStyle(color: textSecondary, height: 1.5),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    child: const Text(
+                      'OK',
+                      style: TextStyle(color: Color(0xFF7C3AED)),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
+          return;
+        }
+
+        // Verify fingerprint first
+        bool verified = false;
+        try {
+          verified = await localAuth.authenticate(
+            localizedReason:
+                'Verify your fingerprint to enable biometric login',
+            options: const AuthenticationOptions(
+              biometricOnly: true,
+              stickyAuth: true,
+            ),
+          );
+        } catch (e) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  'Biometric error: ${e.toString().replaceFirst('Exception: ', '')}',
+                ),
+                backgroundColor: Colors.red,
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+          return;
+        }
+
+        if (!verified) return;
+        if (!context.mounted) return;
+
+        // ✅ Enable the toggle first
+        await ref.read(biometricEnabledProvider.notifier).setEnabled(true);
+
+        // ✅ If we know the current username, ask for their password to save credentials
+        if (currentUsername.isNotEmpty) {
+          // Check if already saved
+          final existingPassword = await BiometricCredentialStorage.getPassword(
+            currentUsername,
+          );
+
+          if (existingPassword == null || existingPassword.isEmpty) {
+            if (!context.mounted) return;
+
+            // Ask for password to save credentials now
+            final password = await promptForPassword();
+
+            if (password != null && password.isNotEmpty && context.mounted) {
+              await ref
+                  .read(biometricAccountsProvider.notifier)
+                  .addAccount(currentUsername, currentUsername);
+              await BiometricCredentialStorage.saveCredentials(
+                currentUsername,
+                password,
+              );
+
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      '✅ Fingerprint login enabled for @$currentUsername!',
+                    ),
+                    backgroundColor: Colors.green,
+                    behavior: SnackBarBehavior.floating,
+                    duration: const Duration(seconds: 3),
+                  ),
+                );
+              }
+            } else {
+              // User skipped password — toggle is enabled but no account saved yet
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      'Fingerprint enabled. Log in once with password to fully link your account.',
+                    ),
+                    backgroundColor: Colors.orange,
+                    behavior: SnackBarBehavior.floating,
+                    duration: Duration(seconds: 4),
+                  ),
+                );
+              }
+            }
+          } else {
+            // Credentials already saved — just re-add the account entry
+            await ref
+                .read(biometricAccountsProvider.notifier)
+                .addAccount(currentUsername, currentUsername);
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Fingerprint login enabled!'),
+                  backgroundColor: Colors.green,
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            }
+          }
+        } else {
+          // Can't determine username right now
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'Fingerprint enabled. Log in once with password to link your account.',
+                ),
+                backgroundColor: Colors.orange,
+                behavior: SnackBarBehavior.floating,
+                duration: Duration(seconds: 4),
+              ),
+            );
+          }
+        }
+      } else {
+        // ── Turning OFF ─────────────────────────────────────────
+        // Just disable — keep saved accounts/credentials intact
+        await ref.read(biometricEnabledProvider.notifier).setEnabled(false);
+
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Fingerprint login disabled.'),
+              backgroundColor: Colors.orange,
+              behavior: SnackBarBehavior.floating,
+            ),
           );
         }
       }
@@ -90,7 +387,6 @@ class SettingsScreen extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── APPEARANCE SECTION ────────────────────────────────
             _SectionLabel(label: 'Appearance', textSecondary: textSecondary),
             const SizedBox(height: 8),
             Container(
@@ -169,7 +465,6 @@ class SettingsScreen extends ConsumerWidget {
               ),
             ),
 
-            // ── Live sensor reading ───────────────────────────────
             if (themeMode == AppThemeMode.sensor) ...[
               const SizedBox(height: 12),
               AnimatedContainer(
@@ -228,7 +523,6 @@ class SettingsScreen extends ConsumerWidget {
 
             const SizedBox(height: 24),
 
-            // ── ACCOUNT SECTION ───────────────────────────────────
             _SectionLabel(label: 'Account', textSecondary: textSecondary),
             const SizedBox(height: 8),
             Container(
@@ -239,7 +533,6 @@ class SettingsScreen extends ConsumerWidget {
               ),
               child: Column(
                 children: [
-                  // Change Password
                   InkWell(
                     onTap: () => Navigator.push(
                       context,
@@ -311,7 +604,72 @@ class SettingsScreen extends ConsumerWidget {
                     color: divColor,
                   ),
 
-                  // Log Out
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 42,
+                          height: 42,
+                          decoration: BoxDecoration(
+                            color: biometricEnabled
+                                ? const Color(0xFF7C3AED).withOpacity(0.15)
+                                : const Color(0xFFEDE9FE),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(
+                            Icons.fingerprint,
+                            color: biometricEnabled
+                                ? const Color(0xFF7C3AED)
+                                : const Color(0xFF7C3AED).withOpacity(0.5),
+                            size: 22,
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Fingerprint Login',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w500,
+                                  color: textPrimary,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                biometricEnabled
+                                    ? 'Tap fingerprint icon on login screen'
+                                    : 'Enable to use fingerprint on login',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Switch(
+                          value: biometricEnabled,
+                          onChanged: (val) => handleBiometricToggle(val),
+                          activeColor: const Color(0xFF7C3AED),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  Divider(
+                    height: 1,
+                    indent: 72,
+                    endIndent: 16,
+                    color: divColor,
+                  ),
+
                   InkWell(
                     onTap: handleLogout,
                     borderRadius: const BorderRadius.vertical(
@@ -371,7 +729,6 @@ class SettingsScreen extends ConsumerWidget {
 
             const SizedBox(height: 24),
 
-            // ── ABOUT SECTION ─────────────────────────────────────
             _SectionLabel(label: 'About', textSecondary: textSecondary),
             const SizedBox(height: 8),
             Container(
@@ -416,12 +773,10 @@ class SettingsScreen extends ConsumerWidget {
   }
 }
 
-// ── Reusable widgets ──────────────────────────────────────────────────────────
 class _SectionLabel extends StatelessWidget {
   final String label;
   final Color textSecondary;
   const _SectionLabel({required this.label, required this.textSecondary});
-
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.only(left: 4, bottom: 2),

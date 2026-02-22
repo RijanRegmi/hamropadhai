@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'dart:async';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:hamropadhai/features/auth/data/datasources/local/auth_local_datasource.dart';
 import 'package:hamropadhai/features/onboarding/presentation/pages/onboarding_screen1.dart';
 import 'package:hamropadhai/features/dashboard/presentation/pages/bottom_navigation_screen.dart';
@@ -15,64 +15,40 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    _initializeApp();
+    _navigate();
   }
 
-  Future<void> _initializeApp() async {
-    // Wait for 2 seconds to show splash screen
-    await Future.delayed(const Duration(seconds: 2));
+  Future<void> _navigate() async {
+    // Remove native splash and go straight to destination
+    FlutterNativeSplash.remove();
+
+    Widget destination;
+    try {
+      final authLocalDatasource = AuthLocalDatasource();
+      final isLoggedIn = await authLocalDatasource.isLoggedIn();
+      destination = isLoggedIn
+          ? const BottomNavigationScreen()
+          : const OnboardingScreen1();
+    } catch (e) {
+      debugPrint('Error checking login status: $e');
+      destination = const OnboardingScreen1();
+    }
 
     if (!mounted) return;
 
-    try {
-      // Check if user is logged in
-      final authLocalDatasource = AuthLocalDatasource();
-      final isLoggedIn = await authLocalDatasource.isLoggedIn();
-
-      if (!mounted) return;
-
-      if (isLoggedIn) {
-        // User is logged in, go to home
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const BottomNavigationScreen(),
-          ),
-        );
-      } else {
-        // User is not logged in, go to onboarding
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const OnboardingScreen1()),
-        );
-      }
-    } catch (e) {
-      print('Error checking login status: $e');
-
-      if (!mounted) return;
-
-      // If there's an error, go to onboarding to be safe
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const OnboardingScreen1()),
-      );
-    }
+    Navigator.pushReplacement(
+      context,
+      PageRouteBuilder(
+        pageBuilder: (_, __, ___) => destination,
+        transitionDuration: Duration.zero, // instant, no animation
+        reverseTransitionDuration: Duration.zero,
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Image.asset("assets/images/logo.png", width: 150),
-            const SizedBox(height: 20),
-            const CircularProgressIndicator(),
-          ],
-        ),
-      ),
-    );
+    // Invisible screen - user never sees this, goes straight to destination
+    return const Scaffold(backgroundColor: Color(0xFFFFF8F0));
   }
 }
