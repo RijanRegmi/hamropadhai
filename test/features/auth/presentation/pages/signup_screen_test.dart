@@ -20,7 +20,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(TextField), findsNWidgets(6));
-    expect(find.text('Name'), findsOneWidget);
+    expect(find.text('Full Name'), findsOneWidget);
     expect(find.text('Username'), findsOneWidget);
     expect(find.text('Email'), findsOneWidget);
     expect(find.text('Phone Number'), findsOneWidget);

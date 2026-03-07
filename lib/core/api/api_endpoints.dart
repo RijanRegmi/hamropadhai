@@ -2,7 +2,7 @@ class ApiEndpoints {
   ApiEndpoints._();
 
   static const String _emulatorHost = '10.0.2.2';
-  static const String _physicalDeviceHost = '192.168.1.9';
+  static const String _physicalDeviceHost = '192.168.18.114';
 
   // static const bool usePhysicalDevice = false;
   static const bool usePhysicalDevice = true;

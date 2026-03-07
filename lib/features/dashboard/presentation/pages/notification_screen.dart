@@ -10,7 +10,6 @@ import 'package:hamropadhai/features/dashboard/presentation/pages/assignment_scr
 import 'package:hamropadhai/features/dashboard/presentation/pages/notice_screen.dart';
 import 'package:hamropadhai/features/dashboard/presentation/pages/routine_screen.dart';
 
-// ── Providers ─────────────────────────────────────────────────────────────────
 final notificationsProvider =
     FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
       final token = await ref.watch(authTokenProvider.future);
@@ -53,7 +52,6 @@ final notifUnreadCountProvider = StreamProvider<int>((ref) async* {
   }
 });
 
-// ── Type metadata ─────────────────────────────────────────────────────────────
 class _Meta {
   final Color color, bg;
   final IconData icon;
@@ -401,7 +399,6 @@ class _Tile extends StatelessWidget {
     final createdAt = n['createdAt'] as String?;
     final meta = _metaFor(type);
 
-    // ✅ Unread bg adapts: purple tint in light, subtle dark card in dark
     final tileBg = isRead
         ? (isDark ? const Color(0xFF1A1A1A) : Colors.white)
         : (isDark ? const Color(0xFF1A1230) : const Color(0xFFFAF7FF));

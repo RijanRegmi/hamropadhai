@@ -10,6 +10,8 @@ import '../widgets/custom_text_field.dart';
 import '../widgets/custom_password_field.dart';
 import '../widgets/custom_button.dart';
 import 'package:hamropadhai/core/providers/biometric_provider.dart';
+import 'package:hamropadhai/features/dashboard/presentation/services/notification_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -54,6 +56,30 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 
+  /// ✅ Call this after every successful login to register FCM token for this user
+  Future<void> _registerFCMForCurrentUser() async {
+    try {
+      // 1. Stop any previous user's FCM session (removes old token from backend)
+      await NotificationService.instance.stopService();
+
+      // 2. Get the fresh auth token for the newly logged-in user
+      final prefs = await SharedPreferences.getInstance();
+      final authToken = prefs.getString(
+        'auth_token',
+      ); // ← adjust key to match yours
+
+      if (authToken != null && authToken.isNotEmpty) {
+        // 3. Register this user's FCM token with the backend
+        await NotificationService.instance.startService(authToken);
+        print('✅ FCM registered for new user');
+      } else {
+        print('⚠️ Auth token not found after login — FCM not registered');
+      }
+    } catch (e) {
+      print('❌ FCM registration error: $e');
+    }
+  }
+
   Future<void> _handleLogin() async {
     if (usernameController.text.trim().isEmpty) {
       _showErrorSnackBar('Please enter username');
@@ -74,6 +100,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
       if (!mounted) return;
       ref.invalidate(profileProvider);
+
+      // ✅ Register FCM token for this user right after login
+      await _registerFCMForCurrentUser();
+
       _showSuccessSnackBar('Login successful!');
 
       final username = usernameController.text.trim();
@@ -83,20 +113,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       final savedAccounts = ref.read(biometricAccountsProvider);
       final alreadySaved = savedAccounts.any((a) => a['username'] == username);
 
-      // ✅ Ask to save fingerprint if:
-      //    - biometric is enabled AND this account isn't saved yet
-      //    OR
-      //    - biometric is enabled AND account WAS saved but credentials are missing
-      //      (e.g. user turned off, turned back on, logged in again)
       bool shouldAsk = biometricEnabled && !alreadySaved;
 
-      // Also check if enabled + saved but credentials got wiped somehow
       if (biometricEnabled && alreadySaved) {
         final existingPassword = await BiometricCredentialStorage.getPassword(
           username,
         );
         if (existingPassword == null || existingPassword.isEmpty) {
-          // Credentials missing — remove stale account entry and ask again
           await ref
               .read(biometricAccountsProvider.notifier)
               .removeAccount(username);
@@ -340,6 +363,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
       ref.invalidate(profileProvider);
+
+      // ✅ Register FCM token for this user right after biometric login too
+      await _registerFCMForCurrentUser();
+
       _showSuccessSnackBar('Welcome back, $selectedUsername!');
 
       Navigator.pushAndRemoveUntil(
