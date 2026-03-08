@@ -27,8 +27,6 @@ class SettingsScreen extends ConsumerWidget {
 
     final biometricEnabled = ref.watch(biometricEnabledProvider);
 
-    // ✅ Get current logged-in username from profileProvider
-    // profileProvider returns Map<String, dynamic>
     final profileAsync = ref.watch(profileProvider);
     final currentUsername =
         profileAsync.whenOrNull(data: (p) => p['username'] as String?) ?? '';
@@ -79,7 +77,6 @@ class SettingsScreen extends ConsumerWidget {
       }
     }
 
-    // ✅ Ask user to enter their password so we can save credentials right now
     Future<String?> promptForPassword() async {
       final controller = TextEditingController();
       bool obscure = true;

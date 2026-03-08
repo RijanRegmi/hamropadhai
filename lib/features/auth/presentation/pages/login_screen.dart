@@ -56,20 +56,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 
-  /// ✅ Call this after every successful login to register FCM token for this user
   Future<void> _registerFCMForCurrentUser() async {
     try {
-      // 1. Stop any previous user's FCM session (removes old token from backend)
       await NotificationService.instance.stopService();
 
-      // 2. Get the fresh auth token for the newly logged-in user
       final prefs = await SharedPreferences.getInstance();
-      final authToken = prefs.getString(
-        'auth_token',
-      ); // ← adjust key to match yours
+      final authToken = prefs.getString('auth_token');
 
       if (authToken != null && authToken.isNotEmpty) {
-        // 3. Register this user's FCM token with the backend
         await NotificationService.instance.startService(authToken);
         print('✅ FCM registered for new user');
       } else {
@@ -101,7 +95,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       if (!mounted) return;
       ref.invalidate(profileProvider);
 
-      // ✅ Register FCM token for this user right after login
       await _registerFCMForCurrentUser();
 
       _showSuccessSnackBar('Login successful!');
@@ -364,7 +357,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
       ref.invalidate(profileProvider);
 
-      // ✅ Register FCM token for this user right after biometric login too
       await _registerFCMForCurrentUser();
 
       _showSuccessSnackBar('Welcome back, $selectedUsername!');

@@ -529,7 +529,7 @@ class _AssignmentDetailScreenState
   bool _submitting = false;
   List<PlatformFile> _pickedFiles = [];
 
-  Future<String> get _baseUrl async => await ApiEndpoints.imageBaseUrl;
+  // ✅ REMOVED broken: Future<String> get _baseUrl async => await ApiEndpoints.imageBaseUrl;
 
   @override
   void initState() {
@@ -766,7 +766,8 @@ class _AssignmentDetailScreenState
       final token = await ref.read(authTokenProvider.future);
       if (token == null) throw Exception('Not logged in');
       final assignmentId = widget.assignment['_id'] as String;
-      final uri = Uri.parse('$_baseUrl/api/assignments/$assignmentId/submit');
+      final baseUrl = await ApiEndpoints.imageBaseUrl; // ✅ properly awaited
+      final uri = Uri.parse('$baseUrl/api/assignments/$assignmentId/submit');
       final request = http.MultipartRequest('POST', uri)
         ..headers['Authorization'] = 'Bearer $token';
       if (_textController.text.trim().isNotEmpty)
@@ -815,7 +816,8 @@ class _AssignmentDetailScreenState
   }
 
   Future<void> _openFile(String fileUrl) async {
-    final fullUrl = '$_baseUrl$fileUrl';
+    final baseUrl = await ApiEndpoints.imageBaseUrl; // ✅ properly awaited
+    final fullUrl = '$baseUrl$fileUrl';
     final token = await ref.read(authTokenProvider.future);
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
@@ -934,7 +936,6 @@ class _AssignmentDetailScreenState
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header gradient card
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(20),
@@ -1202,7 +1203,6 @@ class _AssignmentDetailScreenState
                       ),
                     ),
                     const SizedBox(height: 12),
-                    // ✅ CHANGED: Single button that opens Camera/Gallery/File dialog
                     SizedBox(
                       width: double.infinity,
                       child: _AttachButton(

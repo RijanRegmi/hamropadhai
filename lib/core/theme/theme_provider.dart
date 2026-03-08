@@ -5,14 +5,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:light_sensor/light_sensor.dart';
 
-// ── Theme mode enum ───────────────────────────────────────────────────────────
 enum AppThemeMode { light, dark, auto, sensor }
 
-// Threshold: below this lux = dark mode triggered
 const double kDarkLuxThreshold = 10.0;
 
-// ── Raw lux stream — always running, not conditional ─────────────────────────
-// ✅ This starts immediately when the app launches, regardless of selected mode
 final lightSensorProvider = StreamProvider<double>((ref) async* {
   final hasSensor = await LightSensor.hasSensor;
   dev.log('💡 hasSensor: $hasSensor');
@@ -24,7 +20,6 @@ final lightSensorProvider = StreamProvider<double>((ref) async* {
   }
 });
 
-// ── Theme notifier ────────────────────────────────────────────────────────────
 class ThemeModeNotifier extends StateNotifier<AppThemeMode> {
   ThemeModeNotifier() : super(AppThemeMode.auto) {
     _load();
@@ -61,13 +56,9 @@ final themeModeProvider =
       (_) => ThemeModeNotifier(),
     );
 
-// ── Resolved ThemeMode provider ───────────────────────────────────────────────
-// ✅ Always watches lightSensorProvider so the stream is always alive
-// When mode == sensor, uses lux value. Otherwise uses manual setting.
 final resolvedThemeModeProvider = Provider<ThemeMode>((ref) {
   final mode = ref.watch(themeModeProvider);
 
-  // ✅ Always watch the sensor stream — this keeps it alive and reactive
   final luxAsync = ref.watch(lightSensorProvider);
 
   if (mode == AppThemeMode.sensor) {
@@ -98,7 +89,6 @@ final resolvedThemeModeProvider = Provider<ThemeMode>((ref) {
   }
 });
 
-// ── App Themes ────────────────────────────────────────────────────────────────
 ThemeData lightTheme() => ThemeData(
   brightness: Brightness.light,
   colorSchemeSeed: const Color(0xFF7C3AED),
