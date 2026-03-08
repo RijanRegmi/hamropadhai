@@ -8,12 +8,14 @@ class RoutineRemoteDatasource {
 
   RoutineRemoteDatasource(this._client);
 
-  String get _baseUrl => '${ApiEndpoints.imageBaseUrl}/api/routines';
+  Future<String> get _baseUrl async =>
+      '${await ApiEndpoints.imageBaseUrl}/api/routines';
 
   Future<Map<String, dynamic>> getMyRoutine(String token) async {
+    final baseUrl = await _baseUrl;
     final response = await _client
         .get(
-          Uri.parse('$_baseUrl/my'),
+          Uri.parse('$baseUrl/my'),
           headers: {
             'Content-Type': 'application/json',
             'Authorization': 'Bearer $token',

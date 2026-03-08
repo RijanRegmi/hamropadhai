@@ -10,7 +10,8 @@ import 'package:hamropadhai/features/auth/data/repositories/notice_repository.da
 import 'package:hamropadhai/features/auth/presentation/providers/auth_token_provider.dart';
 import 'package:hamropadhai/features/auth/presentation/providers/notice_provider.dart';
 
-String get _base => ApiEndpoints.imageBaseUrl;
+// Changed from sync getter to async function
+Future<String> _base() async => await ApiEndpoints.imageBaseUrl;
 
 Color _priorityColor(String p) {
   switch (p) {
@@ -334,8 +335,9 @@ class _NoticeCard extends StatelessWidget {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  _AdminAvatar(
-                    imageUrl: adminImage != null ? '$_base$adminImage' : null,
+                  // AdminAvatar now uses FutureBuilder for async base URL
+                  _AdminAvatarAsync(
+                    imagePath: adminImage,
                     name: adminName,
                     size: 42,
                   ),
@@ -476,6 +478,32 @@ class _NoticeCard extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Async-aware avatar: resolves base URL then builds the image URL
+class _AdminAvatarAsync extends StatelessWidget {
+  final String? imagePath; // just the path part, e.g. "/uploads/abc.jpg"
+  final String name;
+  final double size;
+  const _AdminAvatarAsync({
+    required this.imagePath,
+    required this.name,
+    this.size = 42,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (imagePath == null) {
+      return _AdminAvatar(imageUrl: null, name: name, size: size);
+    }
+    return FutureBuilder<String>(
+      future: _base(),
+      builder: (context, snap) {
+        final url = snap.hasData ? '${snap.data}$imagePath' : null;
+        return _AdminAvatar(imageUrl: url, name: name, size: size);
+      },
     );
   }
 }
@@ -673,6 +701,7 @@ class _NoticeDetailScreenState extends ConsumerState<NoticeDetailScreen> {
   }
 
   Future<void> _openFile(String fileUrl, String fileName) async {
+    final base = await _base();
     final token = await ref.read(authTokenProvider.future);
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
@@ -696,7 +725,7 @@ class _NoticeDetailScreenState extends ConsumerState<NoticeDetailScreen> {
     try {
       final res = await http
           .get(
-            Uri.parse('$_base$fileUrl'),
+            Uri.parse('$base$fileUrl'),
             headers: token != null ? {'Authorization': 'Bearer $token'} : {},
           )
           .timeout(const Duration(seconds: 30));
@@ -822,14 +851,13 @@ class _NoticeDetailScreenState extends ConsumerState<NoticeDetailScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Posted by card
             Container(
               color: cardColor,
               padding: const EdgeInsets.all(16),
               child: Row(
                 children: [
-                  _AdminAvatar(
-                    imageUrl: adminImage != null ? '$_base$adminImage' : null,
+                  _AdminAvatarAsync(
+                    imagePath: adminImage,
                     name: adminName,
                     size: 52,
                   ),

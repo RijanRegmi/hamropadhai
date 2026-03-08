@@ -529,8 +529,7 @@ class _AssignmentDetailScreenState
   bool _submitting = false;
   List<PlatformFile> _pickedFiles = [];
 
-  // ✅ CHANGED: use ApiEndpoints instead of hardcoded 10.0.2.2
-  String get _baseUrl => ApiEndpoints.imageBaseUrl;
+  Future<String> get _baseUrl async => await ApiEndpoints.imageBaseUrl;
 
   @override
   void initState() {
@@ -547,7 +546,6 @@ class _AssignmentDetailScreenState
     super.dispose();
   }
 
-  // ✅ ADDED: Camera/Gallery/File picker dialog (same pattern as profile screen)
   Future<void> _showAttachmentSourceDialog() async {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     await showDialog(
@@ -679,7 +677,6 @@ class _AssignmentDetailScreenState
     );
   }
 
-  // ✅ ADDED: Camera capture using image_picker
   Future<void> _pickFromCamera() async {
     try {
       final picker = ImagePicker();

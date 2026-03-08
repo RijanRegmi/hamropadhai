@@ -7,12 +7,13 @@ import 'package:hamropadhai/core/api/api_endpoints.dart';
 final _noticeRemoteProvider = Provider((ref) => _NoticeRemote());
 
 class _NoticeRemote {
-  String get _base => ApiEndpoints.imageBaseUrl;
+  Future<String> get _base async => await ApiEndpoints.imageBaseUrl;
 
   Future<List<Map<String, dynamic>>> getMyNotices(String token) async {
+    final base = await _base;
     final res = await http
         .get(
-          Uri.parse('$_base/api/notices/my'),
+          Uri.parse('$base/api/notices/my'),
           headers: {'Authorization': 'Bearer $token'},
         )
         .timeout(const Duration(seconds: 10));
@@ -24,9 +25,10 @@ class _NoticeRemote {
   }
 
   Future<Map<String, dynamic>> markAsRead(String token, String noticeId) async {
+    final base = await _base;
     final res = await http
         .post(
-          Uri.parse('$_base/api/notices/$noticeId/mark-read'),
+          Uri.parse('$base/api/notices/$noticeId/mark-read'),
           headers: {'Authorization': 'Bearer $token'},
         )
         .timeout(const Duration(seconds: 10));
@@ -38,9 +40,10 @@ class _NoticeRemote {
   }
 
   Future<Map<String, dynamic>> getUnreadCount(String token) async {
+    final base = await _base;
     final res = await http
         .get(
-          Uri.parse('$_base/api/notices/unread-count'),
+          Uri.parse('$base/api/notices/unread-count'),
           headers: {'Authorization': 'Bearer $token'},
         )
         .timeout(const Duration(seconds: 10));

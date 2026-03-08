@@ -6,7 +6,7 @@ import '../../../../onboarding/presentation/pages/onboarding_screen1.dart';
 import '../../../../auth/presentation/view_model/auth_viewmodel.dart';
 import '../../../../../core/api/api_endpoints.dart';
 import '../edit_profile_screen.dart';
-import '../settings_screen.dart'; // ✅ import your settings screen
+import '../settings_screen.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -181,7 +181,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         ),
         centerTitle: false,
         actions: [
-          // ✅ Settings icon instead of notification bell
           IconButton(
             icon: Icon(
               Icons.settings_outlined,
@@ -223,41 +222,59 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           children: [
             const SizedBox(height: 20),
 
-            // Avatar
+            // ✅ Avatar — uses FutureBuilder to resolve base URL
             GestureDetector(
               onTap: () {
                 if (profileImage != null) {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => FullScreenImage(
-                        imageUrl: "${ApiEndpoints.imageBaseUrl}$profileImage",
-                      ),
+                      builder: (context) =>
+                          FullScreenImageAsync(imagePath: profileImage),
                     ),
                   );
                 }
               },
               child: Stack(
                 children: [
-                  CircleAvatar(
-                    radius: 80,
-                    backgroundColor: Colors.teal,
-                    backgroundImage: _imageFile != null
-                        ? FileImage(_imageFile!)
-                        : (profileImage != null
-                                  ? NetworkImage(
-                                      "${ApiEndpoints.imageBaseUrl}$profileImage",
-                                    )
-                                  : null)
-                              as ImageProvider?,
-                    child: _imageFile == null && profileImage == null
-                        ? const Icon(
-                            Icons.person,
-                            size: 80,
-                            color: Colors.white,
-                          )
-                        : null,
-                  ),
+                  // Local picked file takes priority
+                  if (_imageFile != null)
+                    CircleAvatar(
+                      radius: 80,
+                      backgroundColor: Colors.teal,
+                      backgroundImage: FileImage(_imageFile!),
+                    )
+                  else if (profileImage != null)
+                    FutureBuilder<String>(
+                      future: ApiEndpoints.imageBaseUrl,
+                      builder: (context, snap) {
+                        if (!snap.hasData) {
+                          return const CircleAvatar(
+                            radius: 80,
+                            backgroundColor: Colors.teal,
+                            child: Icon(
+                              Icons.person,
+                              size: 80,
+                              color: Colors.white,
+                            ),
+                          );
+                        }
+                        return CircleAvatar(
+                          radius: 80,
+                          backgroundColor: Colors.teal,
+                          backgroundImage: NetworkImage(
+                            '${snap.data}$profileImage',
+                          ),
+                        );
+                      },
+                    )
+                  else
+                    const CircleAvatar(
+                      radius: 80,
+                      backgroundColor: Colors.teal,
+                      child: Icon(Icons.person, size: 80, color: Colors.white),
+                    ),
+
                   Positioned(
                     bottom: 0,
                     right: 0,
@@ -314,7 +331,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ),
             ),
 
-            // ✅ Setting now navigates to SettingsScreen
             _buildMenuTile(
               icon: Icons.settings_outlined,
               iconColor: Colors.orange,
@@ -486,9 +502,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 }
 
-class FullScreenImage extends StatelessWidget {
-  final String imageUrl;
-  const FullScreenImage({super.key, required this.imageUrl});
+/// ✅ Async-aware full screen image — resolves base URL before showing image
+class FullScreenImageAsync extends StatelessWidget {
+  final String imagePath;
+  const FullScreenImageAsync({super.key, required this.imagePath});
 
   @override
   Widget build(BuildContext context) {
@@ -499,34 +516,44 @@ class FullScreenImage extends StatelessWidget {
         iconTheme: const IconThemeData(color: Colors.white),
         elevation: 0,
       ),
-      body: Center(
-        child: InteractiveViewer(
-          minScale: 0.5,
-          maxScale: 4.0,
-          child: Image.network(
-            imageUrl,
-            fit: BoxFit.contain,
-            loadingBuilder: (context, child, loadingProgress) {
-              if (loadingProgress == null) return child;
-              return const Center(
-                child: CircularProgressIndicator(color: Colors.white),
-              );
-            },
-            errorBuilder: (context, error, stackTrace) => const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.error_outline, color: Colors.white, size: 60),
-                  SizedBox(height: 16),
-                  Text(
-                    'Unable to load image',
-                    style: TextStyle(color: Colors.white),
+      body: FutureBuilder<String>(
+        future: ApiEndpoints.imageBaseUrl,
+        builder: (context, snap) {
+          if (!snap.hasData) {
+            return const Center(
+              child: CircularProgressIndicator(color: Colors.white),
+            );
+          }
+          return Center(
+            child: InteractiveViewer(
+              minScale: 0.5,
+              maxScale: 4.0,
+              child: Image.network(
+                '${snap.data}$imagePath',
+                fit: BoxFit.contain,
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return const Center(
+                    child: CircularProgressIndicator(color: Colors.white),
+                  );
+                },
+                errorBuilder: (context, error, stackTrace) => const Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.error_outline, color: Colors.white, size: 60),
+                      SizedBox(height: 16),
+                      Text(
+                        'Unable to load image',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }

@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:hamropadhai/core/api/api_client.dart';
 import 'package:hamropadhai/core/api/api_endpoints.dart';
@@ -10,12 +11,20 @@ void main() {
   late AuthRemoteDataSourceImpl datasource;
   late MockApiClient mockApiClient;
 
+  setUpAll(() async {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    SharedPreferences.setMockInitialValues({});
+    await ApiEndpoints.init();
+  });
+
   setUp(() {
     mockApiClient = MockApiClient();
     datasource = AuthRemoteDataSourceImpl(mockApiClient);
   });
 
   test('signup should call ApiClient.post with correct data', () async {
+    final base = await ApiEndpoints.baseUrl;
+
     when(
       () => mockApiClient.post(any(), body: any(named: 'body')),
     ).thenAnswer((_) async => {});
@@ -31,7 +40,7 @@ void main() {
 
     verify(
       () => mockApiClient.post(
-        ApiEndpoints.baseUrl + ApiEndpoints.signup,
+        base + ApiEndpoints.signup,
         body: {
           "fullName": "John Doe",
           "username": "john",
@@ -45,6 +54,8 @@ void main() {
   });
 
   test('login should return token when response is valid', () async {
+    final base = await ApiEndpoints.baseUrl;
+
     when(() => mockApiClient.post(any(), body: any(named: 'body'))).thenAnswer(
       (_) async => {
         "success": true,
@@ -57,7 +68,7 @@ void main() {
     expect(token, 'test_token');
     verify(
       () => mockApiClient.post(
-        ApiEndpoints.baseUrl + ApiEndpoints.login,
+        base + ApiEndpoints.login,
         body: {"username": "john", "password": "123456"},
       ),
     ).called(1);
@@ -86,6 +97,8 @@ void main() {
   });
 
   test('getProfile should call correct endpoint with Bearer token', () async {
+    final base = await ApiEndpoints.baseUrl;
+
     when(
       () => mockApiClient.get(any(), headers: any(named: 'headers')),
     ).thenAnswer(
@@ -99,7 +112,7 @@ void main() {
     expect(result['fullName'], 'John Doe');
     verify(
       () => mockApiClient.get(
-        ApiEndpoints.baseUrl + ApiEndpoints.profile,
+        base + ApiEndpoints.profile,
         headers: {'Authorization': 'Bearer test_token'},
       ),
     ).called(1);

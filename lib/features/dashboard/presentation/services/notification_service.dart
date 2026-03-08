@@ -20,7 +20,8 @@ class NotificationService {
   NotificationService._();
   static final NotificationService instance = NotificationService._();
 
-  String get _base => ApiEndpoints.imageBaseUrl;
+  // Changed from sync getter to async getter
+  Future<String> get _base async => await ApiEndpoints.imageBaseUrl;
 
   static const _seenKey = 'hp_seen_notif_ids';
   static const _fcmTokenKey = 'hp_fcm_token';
@@ -236,9 +237,10 @@ class NotificationService {
 
   Future<void> _sendTokenToBackend(String fcmToken, String authToken) async {
     try {
+      final base = await _base; // await here
       final response = await http
           .post(
-            Uri.parse('$_base/api/student/fcm-token'),
+            Uri.parse('$base/api/student/fcm-token'),
             headers: {
               'Authorization': 'Bearer $authToken',
               'Content-Type': 'application/json',
@@ -259,11 +261,12 @@ class NotificationService {
 
   Future<void> stopService() async {
     try {
+      final base = await _base; // await here
       final fcmToken = await _getStoredToken();
       if (fcmToken != null && _token != null) {
         await http
             .delete(
-              Uri.parse('$_base/api/student/fcm-token'),
+              Uri.parse('$base/api/student/fcm-token'),
               headers: {
                 'Authorization': 'Bearer $_token',
                 'Content-Type': 'application/json',

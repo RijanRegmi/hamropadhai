@@ -8,12 +8,14 @@ class AssignmentRemoteDatasource {
 
   AssignmentRemoteDatasource(this._client);
 
-  String get _baseUrl => '${ApiEndpoints.imageBaseUrl}/api/assignments';
+  Future<String> get _baseUrl async =>
+      '${await ApiEndpoints.imageBaseUrl}/api/assignments';
 
   Future<List<Map<String, dynamic>>> getMyAssignments(String token) async {
+    final baseUrl = await _baseUrl;
     final res = await _client
         .get(
-          Uri.parse('$_baseUrl/my'),
+          Uri.parse('$baseUrl/my'),
           headers: {
             'Content-Type': 'application/json',
             'Authorization': 'Bearer $token',
@@ -28,9 +30,10 @@ class AssignmentRemoteDatasource {
   }
 
   Future<List<Map<String, dynamic>>> getPendingAssignments(String token) async {
+    final baseUrl = await _baseUrl;
     final res = await _client
         .get(
-          Uri.parse('$_baseUrl/pending'),
+          Uri.parse('$baseUrl/pending'),
           headers: {
             'Content-Type': 'application/json',
             'Authorization': 'Bearer $token',
@@ -49,9 +52,10 @@ class AssignmentRemoteDatasource {
   Future<List<Map<String, dynamic>>> getSubmittedAssignments(
     String token,
   ) async {
+    final baseUrl = await _baseUrl;
     final res = await _client
         .get(
-          Uri.parse('$_baseUrl/submitted'),
+          Uri.parse('$baseUrl/submitted'),
           headers: {
             'Content-Type': 'application/json',
             'Authorization': 'Bearer $token',
@@ -68,9 +72,10 @@ class AssignmentRemoteDatasource {
   }
 
   Future<List<Map<String, dynamic>>> getGradedAssignments(String token) async {
+    final baseUrl = await _baseUrl;
     final res = await _client
         .get(
-          Uri.parse('$_baseUrl/graded'),
+          Uri.parse('$baseUrl/graded'),
           headers: {
             'Content-Type': 'application/json',
             'Authorization': 'Bearer $token',
@@ -85,9 +90,10 @@ class AssignmentRemoteDatasource {
   }
 
   Future<List<Map<String, dynamic>>> getHistoryAssignments(String token) async {
+    final baseUrl = await _baseUrl;
     final res = await _client
         .get(
-          Uri.parse('$_baseUrl/history'),
+          Uri.parse('$baseUrl/history'),
           headers: {
             'Content-Type': 'application/json',
             'Authorization': 'Bearer $token',
@@ -105,9 +111,10 @@ class AssignmentRemoteDatasource {
     String token,
     String id,
   ) async {
+    final baseUrl = await _baseUrl;
     final res = await _client
         .get(
-          Uri.parse('$_baseUrl/$id'),
+          Uri.parse('$baseUrl/$id'),
           headers: {
             'Content-Type': 'application/json',
             'Authorization': 'Bearer $token',
@@ -126,9 +133,10 @@ class AssignmentRemoteDatasource {
     String id,
     String? textContent,
   ) async {
+    final baseUrl = await _baseUrl;
     final res = await _client
         .post(
-          Uri.parse('$_baseUrl/$id/submit'),
+          Uri.parse('$baseUrl/$id/submit'),
           headers: {
             'Content-Type': 'application/json',
             'Authorization': 'Bearer $token',

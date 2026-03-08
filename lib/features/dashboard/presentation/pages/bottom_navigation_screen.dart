@@ -130,6 +130,14 @@ class _ProfileNavItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final isSelected = index == currentIndex;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final fallbackIcon = Icon(
+      Icons.person,
+      size: 18,
+      color: isSelected
+          ? const Color(0xFF7C3AED)
+          : (isDark ? Colors.grey[600] : Colors.grey),
+    );
+
     return Expanded(
       child: GestureDetector(
         onTap: onTap,
@@ -149,24 +157,18 @@ class _ProfileNavItem extends StatelessWidget {
             ),
             child: ClipOval(
               child: profileImage != null
-                  ? Image.network(
-                      '${ApiEndpoints.imageBaseUrl}$profileImage',
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Icon(
-                        Icons.person,
-                        size: 18,
-                        color: isSelected
-                            ? const Color(0xFF7C3AED)
-                            : (isDark ? Colors.grey[600] : Colors.grey),
-                      ),
+                  ? FutureBuilder<String>(
+                      future: ApiEndpoints.imageBaseUrl,
+                      builder: (context, snap) {
+                        if (!snap.hasData) return fallbackIcon;
+                        return Image.network(
+                          '${snap.data}$profileImage',
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => fallbackIcon,
+                        );
+                      },
                     )
-                  : Icon(
-                      Icons.person,
-                      size: 18,
-                      color: isSelected
-                          ? const Color(0xFF7C3AED)
-                          : (isDark ? Colors.grey[600] : Colors.grey),
-                    ),
+                  : fallbackIcon,
             ),
           ),
         ),

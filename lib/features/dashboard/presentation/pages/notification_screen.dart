@@ -14,9 +14,11 @@ final notificationsProvider =
     FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
       final token = await ref.watch(authTokenProvider.future);
       if (token == null) throw Exception('Not logged in');
+      // ✅ await imageBaseUrl
+      final base = await ApiEndpoints.imageBaseUrl;
       final res = await http
           .get(
-            Uri.parse('${ApiEndpoints.imageBaseUrl}/api/student/notifications'),
+            Uri.parse('$base/api/student/notifications'),
             headers: {'Authorization': 'Bearer $token'},
           )
           .timeout(const Duration(seconds: 10));
@@ -30,11 +32,11 @@ final notifUnreadCountProvider = StreamProvider<int>((ref) async* {
     try {
       final token = await ref.read(authTokenProvider.future);
       if (token == null) return 0;
+      // ✅ await imageBaseUrl
+      final base = await ApiEndpoints.imageBaseUrl;
       final res = await http
           .get(
-            Uri.parse(
-              '${ApiEndpoints.imageBaseUrl}/api/student/notifications/unread-count',
-            ),
+            Uri.parse('$base/api/student/notifications/unread-count'),
             headers: {'Authorization': 'Bearer $token'},
           )
           .timeout(const Duration(seconds: 10));
@@ -173,11 +175,11 @@ class NotificationScreen extends ConsumerWidget {
 
   Future<void> _markAll(WidgetRef ref, String token) async {
     try {
+      // ✅ await imageBaseUrl
+      final base = await ApiEndpoints.imageBaseUrl;
       await http
           .post(
-            Uri.parse(
-              '${ApiEndpoints.imageBaseUrl}/api/student/notifications/mark-all-read',
-            ),
+            Uri.parse('$base/api/student/notifications/mark-all-read'),
             headers: {'Authorization': 'Bearer $token'},
           )
           .timeout(const Duration(seconds: 10));
@@ -188,11 +190,11 @@ class NotificationScreen extends ConsumerWidget {
 
   Future<void> _markOne(WidgetRef ref, String token, String id) async {
     try {
+      // ✅ await imageBaseUrl
+      final base = await ApiEndpoints.imageBaseUrl;
       await http
           .post(
-            Uri.parse(
-              '${ApiEndpoints.imageBaseUrl}/api/student/notifications/$id/mark-read',
-            ),
+            Uri.parse('$base/api/student/notifications/$id/mark-read'),
             headers: {'Authorization': 'Bearer $token'},
           )
           .timeout(const Duration(seconds: 10));

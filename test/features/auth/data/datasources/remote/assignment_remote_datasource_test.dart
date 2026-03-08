@@ -1,7 +1,9 @@
 import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:http/http.dart' as http;
+import 'package:hamropadhai/core/api/api_endpoints.dart';
 import 'package:hamropadhai/features/auth/data/datasources/remote/assignment_remote_datasource.dart';
 
 class MockHttpClient extends Mock implements http.Client {}
@@ -12,7 +14,10 @@ void main() {
 
   const token = 'test_token';
 
-  setUpAll(() {
+  setUpAll(() async {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    SharedPreferences.setMockInitialValues({});
+    await ApiEndpoints.init();
     registerFallbackValue(Uri.parse('http://fallback.test'));
   });
 

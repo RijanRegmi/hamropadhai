@@ -255,6 +255,7 @@ class _WelcomeCard extends StatelessWidget {
     final classId = profile['classId'] as String? ?? '';
     final sectionId = profile['sectionId'] as String? ?? '';
     final isTablet = MediaQuery.of(context).size.width >= 600;
+    final avatarRadius = isTablet ? 42.0 : 36.0;
 
     return Container(
       width: double.infinity,
@@ -323,20 +324,38 @@ class _WelcomeCard extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 16),
-          CircleAvatar(
-            radius: isTablet ? 42 : 36,
-            backgroundColor: Colors.white.withOpacity(0.3),
-            backgroundImage: profileImage != null
-                ? NetworkImage('${ApiEndpoints.imageBaseUrl}$profileImage')
-                : null,
-            child: profileImage == null
-                ? Icon(
-                    Icons.person,
-                    size: isTablet ? 42 : 36,
-                    color: Colors.white,
-                  )
-                : null,
-          ),
+          // ✅ FutureBuilder resolves imageBaseUrl before building the NetworkImage
+          if (profileImage != null)
+            FutureBuilder<String>(
+              future: ApiEndpoints.imageBaseUrl,
+              builder: (context, snap) {
+                final imageProvider = snap.hasData
+                    ? NetworkImage('${snap.data}$profileImage') as ImageProvider
+                    : null;
+                return CircleAvatar(
+                  radius: avatarRadius,
+                  backgroundColor: Colors.white.withOpacity(0.3),
+                  backgroundImage: imageProvider,
+                  child: imageProvider == null
+                      ? Icon(
+                          Icons.person,
+                          size: avatarRadius,
+                          color: Colors.white,
+                        )
+                      : null,
+                );
+              },
+            )
+          else
+            CircleAvatar(
+              radius: avatarRadius,
+              backgroundColor: Colors.white.withOpacity(0.3),
+              child: Icon(
+                Icons.person,
+                size: avatarRadius,
+                color: Colors.white,
+              ),
+            ),
         ],
       ),
     );

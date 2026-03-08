@@ -39,9 +39,11 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
     setState(() => _loading = true);
     try {
+      // ✅ await baseUrl
+      final baseUrl = await ApiEndpoints.baseUrl;
       final res = await http
           .post(
-            Uri.parse('${ApiEndpoints.baseUrl}/forgot-password'),
+            Uri.parse('$baseUrl/forgot-password'),
             headers: {'Content-Type': 'application/json'},
             body: jsonEncode({'email': email}),
           )
@@ -108,14 +110,12 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 16),
-
-            // ── Icon ──────────────────────────────────────────────
             Center(
               child: Container(
                 width: 80,
                 height: 80,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFEDE9FE),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFEDE9FE),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
@@ -125,9 +125,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 ),
               ),
             ),
-
             const SizedBox(height: 24),
-
             Center(
               child: Text(
                 'Reset your password',
@@ -150,10 +148,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 textAlign: TextAlign.center,
               ),
             ),
-
             const SizedBox(height: 32),
-
-            // ── Email field ───────────────────────────────────────
             Container(
               decoration: BoxDecoration(
                 color: cardColor,
@@ -211,10 +206,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 ],
               ),
             ),
-
             const SizedBox(height: 28),
-
-            // ── Submit button ─────────────────────────────────────
             SizedBox(
               width: double.infinity,
               height: 50,
@@ -264,7 +256,6 @@ class VerifyCodeScreen extends StatefulWidget {
 }
 
 class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
-  // 6 individual digit controllers
   final List<TextEditingController> _ctrls = List.generate(
     6,
     (_) => TextEditingController(),
@@ -288,7 +279,6 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
     } else if (value.isEmpty && index > 0) {
       _nodes[index - 1].requestFocus();
     }
-    // Auto-submit when all 6 digits filled
     if (_code.length == 6) _verify();
   }
 
@@ -300,9 +290,11 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
 
     setState(() => _loading = true);
     try {
+      // ✅ await baseUrl
+      final baseUrl = await ApiEndpoints.baseUrl;
       final res = await http
           .post(
-            Uri.parse('${ApiEndpoints.baseUrl}/verify-code'),
+            Uri.parse('$baseUrl/verify-code'),
             headers: {'Content-Type': 'application/json'},
             body: jsonEncode({'email': widget.email, 'code': _code}),
           )
@@ -322,7 +314,6 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
         }
       } else {
         _showError(body['message'] ?? 'Invalid code');
-        // Clear code on wrong entry
         for (final c in _ctrls) c.clear();
         _nodes[0].requestFocus();
       }
@@ -336,9 +327,11 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
   Future<void> _resend() async {
     setState(() => _resending = true);
     try {
+      // ✅ await baseUrl
+      final baseUrl = await ApiEndpoints.baseUrl;
       final res = await http
           .post(
-            Uri.parse('${ApiEndpoints.baseUrl}/forgot-password'),
+            Uri.parse('$baseUrl/forgot-password'),
             headers: {'Content-Type': 'application/json'},
             body: jsonEncode({'email': widget.email}),
           )
@@ -416,7 +409,6 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 16),
-
             Center(
               child: Container(
                 width: 80,
@@ -432,7 +424,6 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
                 ),
               ),
             ),
-
             const SizedBox(height: 24),
             Center(
               child: Text(
@@ -456,10 +447,7 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
                 textAlign: TextAlign.center,
               ),
             ),
-
             const SizedBox(height: 32),
-
-            // ── 6 digit boxes ─────────────────────────────────────
             Container(
               decoration: BoxDecoration(
                 color: cardColor,
@@ -521,10 +509,7 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
                 ],
               ),
             ),
-
             const SizedBox(height: 28),
-
-            // ── Verify button ─────────────────────────────────────
             SizedBox(
               width: double.infinity,
               height: 50,
@@ -555,10 +540,7 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
                       ),
               ),
             ),
-
             const SizedBox(height: 16),
-
-            // ── Resend ────────────────────────────────────────────
             Center(
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -651,9 +633,11 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
 
     setState(() => _loading = true);
     try {
+      // ✅ await baseUrl
+      final baseUrl = await ApiEndpoints.baseUrl;
       final res = await http
           .post(
-            Uri.parse('${ApiEndpoints.baseUrl}/reset-password'),
+            Uri.parse('$baseUrl/reset-password'),
             headers: {'Content-Type': 'application/json'},
             body: jsonEncode({
               'email': widget.email,
@@ -740,7 +724,6 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 16),
-
             Center(
               child: Container(
                 width: 80,
@@ -756,7 +739,6 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                 ),
               ),
             ),
-
             const SizedBox(height: 24),
             Center(
               child: Text(
@@ -780,10 +762,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                 textAlign: TextAlign.center,
               ),
             ),
-
             const SizedBox(height: 32),
-
-            // ── Password fields ───────────────────────────────────
             Container(
               decoration: BoxDecoration(
                 color: cardColor,
@@ -793,7 +772,6 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
-                  // New password
                   _buildPasswordField(
                     controller: _newPasswordCtrl,
                     label: 'New Password',
@@ -805,7 +783,6 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                     inputFill: inputFill,
                   ),
                   Divider(height: 24, color: borderColor),
-                  // Confirm password
                   _buildPasswordField(
                     controller: _confirmPasswordCtrl,
                     label: 'Confirm Password',
@@ -820,9 +797,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                 ],
               ),
             ),
-
             const SizedBox(height: 28),
-
             SizedBox(
               width: double.infinity,
               height: 50,

@@ -30,7 +30,6 @@ class _ResetCurrentPasswordScreenState
 
   Future<void> _loadAndSend() async {
     try {
-      // Get logged-in user's profile to fetch their email
       final profile = await ref.read(profileProvider.future);
       final email = profile['email'] as String?;
       if (email == null || email.isEmpty) {
@@ -50,9 +49,11 @@ class _ResetCurrentPasswordScreenState
 
   Future<void> _sendCode(String email) async {
     try {
+      // ✅ await baseUrl
+      final baseUrl = await ApiEndpoints.baseUrl;
       final res = await http
           .post(
-            Uri.parse('${ApiEndpoints.baseUrl}/forgot-password'),
+            Uri.parse('$baseUrl/forgot-password'),
             headers: {'Content-Type': 'application/json'},
             body: jsonEncode({'email': email}),
           )
@@ -74,7 +75,7 @@ class _ResetCurrentPasswordScreenState
       }
     } catch (e) {
       setState(() => _error = 'Connection error. Please try again.');
-    } finally {}
+    }
   }
 
   @override
@@ -232,9 +233,11 @@ class _VerifyCurrentCodeScreenState extends State<_VerifyCurrentCodeScreen> {
     }
     setState(() => _loading = true);
     try {
+      // ✅ await baseUrl
+      final baseUrl = await ApiEndpoints.baseUrl;
       final res = await http
           .post(
-            Uri.parse('${ApiEndpoints.baseUrl}/verify-code'),
+            Uri.parse('$baseUrl/verify-code'),
             headers: {'Content-Type': 'application/json'},
             body: jsonEncode({'email': widget.email, 'code': _code}),
           )
@@ -268,9 +271,11 @@ class _VerifyCurrentCodeScreenState extends State<_VerifyCurrentCodeScreen> {
   Future<void> _resend() async {
     setState(() => _resending = true);
     try {
+      // ✅ await baseUrl
+      final baseUrl = await ApiEndpoints.baseUrl;
       final res = await http
           .post(
-            Uri.parse('${ApiEndpoints.baseUrl}/forgot-password'),
+            Uri.parse('$baseUrl/forgot-password'),
             headers: {'Content-Type': 'application/json'},
             body: jsonEncode({'email': widget.email}),
           )
@@ -299,7 +304,9 @@ class _VerifyCurrentCodeScreenState extends State<_VerifyCurrentCodeScreen> {
           ),
         );
       }
-    } finally {}
+    } finally {
+      if (mounted) setState(() => _resending = false);
+    }
   }
 
   void _clearCode() {
@@ -373,7 +380,6 @@ class _VerifyCurrentCodeScreenState extends State<_VerifyCurrentCodeScreen> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 36),
-            // 6 digit boxes
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: List.generate(6, (i) {
@@ -490,7 +496,7 @@ class _VerifyCurrentCodeScreenState extends State<_VerifyCurrentCodeScreen> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// SCREEN 3 — Set new password (validates it's different from old)
+// SCREEN 3 — Set new password
 // ─────────────────────────────────────────────────────────────────────────────
 class _SetNewCurrentPasswordScreen extends StatefulWidget {
   final String email;
@@ -536,9 +542,11 @@ class _SetNewCurrentPasswordScreenState
 
     setState(() => _loading = true);
     try {
+      // ✅ await baseUrl
+      final baseUrl = await ApiEndpoints.baseUrl;
       final res = await http
           .post(
-            Uri.parse('${ApiEndpoints.baseUrl}/reset-password'),
+            Uri.parse('$baseUrl/reset-password'),
             headers: {'Content-Type': 'application/json'},
             body: jsonEncode({
               'email': widget.email,
@@ -654,8 +662,6 @@ class _SetNewCurrentPasswordScreenState
               ),
             ),
             const SizedBox(height: 36),
-
-            // New password field
             Text(
               'New Password',
               style: TextStyle(
@@ -702,8 +708,6 @@ class _SetNewCurrentPasswordScreenState
               ),
             ),
             const SizedBox(height: 20),
-
-            // Confirm password field
             Text(
               'Confirm Password',
               style: TextStyle(
@@ -750,7 +754,6 @@ class _SetNewCurrentPasswordScreenState
               ),
             ),
             const SizedBox(height: 36),
-
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(

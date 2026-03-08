@@ -7,11 +7,12 @@ class NoticeRemoteDatasource {
 
   NoticeRemoteDatasource(this.client);
 
-  String get _base => ApiEndpoints.imageBaseUrl;
+  Future<String> get _base async => await ApiEndpoints.imageBaseUrl;
 
   Future<List<Map<String, dynamic>>> getMyNotices(String token) async {
+    final base = await _base;
     final res = await client
-        .get(Uri.parse('$_base/api/notices/my'), headers: _headers(token))
+        .get(Uri.parse('$base/api/notices/my'), headers: _headers(token))
         .timeout(const Duration(seconds: 10));
 
     final body = _decode(res);
@@ -19,9 +20,10 @@ class NoticeRemoteDatasource {
   }
 
   Future<int> getUnreadCount(String token) async {
+    final base = await _base;
     final res = await client
         .get(
-          Uri.parse('$_base/api/notices/unread-count'),
+          Uri.parse('$base/api/notices/unread-count'),
           headers: _headers(token),
         )
         .timeout(const Duration(seconds: 10));
@@ -31,8 +33,9 @@ class NoticeRemoteDatasource {
   }
 
   Future<List<Map<String, dynamic>>> getPinnedNotices(String token) async {
+    final base = await _base;
     final res = await client
-        .get(Uri.parse('$_base/api/notices/pinned'), headers: _headers(token))
+        .get(Uri.parse('$base/api/notices/pinned'), headers: _headers(token))
         .timeout(const Duration(seconds: 10));
 
     final body = _decode(res);
@@ -43,11 +46,9 @@ class NoticeRemoteDatasource {
     String token,
     String noticeId,
   ) async {
+    final base = await _base;
     final res = await client
-        .get(
-          Uri.parse('$_base/api/notices/$noticeId'),
-          headers: _headers(token),
-        )
+        .get(Uri.parse('$base/api/notices/$noticeId'), headers: _headers(token))
         .timeout(const Duration(seconds: 10));
 
     final body = _decode(res);
@@ -55,9 +56,10 @@ class NoticeRemoteDatasource {
   }
 
   Future<void> markAsRead(String token, String noticeId) async {
+    final base = await _base;
     await client
         .post(
-          Uri.parse('$_base/api/notices/$noticeId/mark-read'),
+          Uri.parse('$base/api/notices/$noticeId/mark-read'),
           headers: _headers(token),
         )
         .timeout(const Duration(seconds: 10));

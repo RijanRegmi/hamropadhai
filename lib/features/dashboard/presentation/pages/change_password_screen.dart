@@ -44,8 +44,11 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
       final token = await ref.read(authTokenProvider.future);
       if (token == null) throw Exception('Not logged in');
 
+      // ✅ await baseUrl — it's now async
+      final baseUrl = await ApiEndpoints.baseUrl;
+
       final res = await http.post(
-        Uri.parse('${ApiEndpoints.baseUrl}/change-password'),
+        Uri.parse('$baseUrl/change-password'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -60,7 +63,6 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
 
       if (res.statusCode == 200 && body['success'] == true) {
         if (mounted) {
-          // Show success message
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Password changed! Please log in again.'),
@@ -68,7 +70,6 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
               duration: Duration(seconds: 2),
             ),
           );
-          // Wait for snackbar to show then logout and redirect to login
           await Future.delayed(const Duration(seconds: 2));
           if (mounted) {
             await ref.read(authViewModelProvider.notifier).logout();
@@ -126,7 +127,6 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ── Info banner ───────────────────────────────────────
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
@@ -163,7 +163,6 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
 
               const SizedBox(height: 24),
 
-              // ── Fields card ───────────────────────────────────────
               Container(
                 decoration: BoxDecoration(
                   color: cardColor,
@@ -237,7 +236,6 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
 
               const SizedBox(height: 28),
 
-              // ── Submit button ─────────────────────────────────────
               SizedBox(
                 width: double.infinity,
                 height: 50,
@@ -271,7 +269,6 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
 
               const SizedBox(height: 16),
 
-              // ✅ Forgot password link
               Center(
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -312,7 +309,6 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
   }
 }
 
-// ── Reusable password field ───────────────────────────────────────────────────
 class _PasswordField extends StatelessWidget {
   final TextEditingController controller;
   final String label, hint;

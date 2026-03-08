@@ -37,8 +37,9 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     required String password,
     required String gender,
   }) async {
+    final base = await ApiEndpoints.baseUrl;
     await apiClient.post(
-      ApiEndpoints.baseUrl + ApiEndpoints.signup,
+      base + ApiEndpoints.signup,
       body: {
         "fullName": fullName,
         "username": username,
@@ -55,8 +56,9 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     required String username,
     required String password,
   }) async {
+    final base = await ApiEndpoints.baseUrl;
     final response = await apiClient.post(
-      ApiEndpoints.baseUrl + ApiEndpoints.login,
+      base + ApiEndpoints.login,
       body: {"username": username, "password": password},
     );
 
@@ -71,8 +73,9 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
 
   @override
   Future<Map<String, dynamic>> getProfile(String token) async {
+    final base = await ApiEndpoints.baseUrl;
     final data = await apiClient.get(
-      ApiEndpoints.baseUrl + ApiEndpoints.profile,
+      base + ApiEndpoints.profile,
       headers: {"Authorization": "Bearer $token"},
     );
     return data["data"];
@@ -80,8 +83,9 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
 
   @override
   Future<String> uploadProfileImage(String token, String imagePath) async {
+    final base = await ApiEndpoints.baseUrl;
     final data = await apiClient.uploadImage(
-      ApiEndpoints.baseUrl + ApiEndpoints.uploadProfileImage,
+      base + ApiEndpoints.uploadProfileImage,
       imagePath: imagePath,
       fieldName: "profileImage",
       headers: {"Authorization": "Bearer $token"},
@@ -101,8 +105,9 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     String token,
     Map<String, dynamic> data,
   ) async {
+    final base = await ApiEndpoints.baseUrl;
     final response = await apiClient.put(
-      ApiEndpoints.baseUrl + ApiEndpoints.updateProfile,
+      base + ApiEndpoints.updateProfile,
       body: data,
       headers: {"Authorization": "Bearer $token"},
     );
